@@ -1,0 +1,90 @@
+# Jan Seva: Test Cases
+
+Setup: serve the app (`python3 -m http.server 8080`), open in Chrome phone view. Load `sample-data/load-sample-data.js` where noted.
+Result column: Pass / Fail.
+
+## A. Profile and login
+| ID | Steps | Expected | Result |
+|----|-------|----------|--------|
+| A1 | Fresh browser, open app | Welcome screen shows; no console errors | |
+| A2 | Create profile with name and phone | Saved; Home opens; name shown on return | |
+| A3 | Continue as guest | Home opens without a profile | |
+| A4 | Set a PIN, reload | PIN prompt appears | |
+| A5 | Enter wrong PIN | Rejected, stays on lock screen | |
+| A6 | Enter correct PIN | Home opens | |
+| A7 | Enable 2-step, enter a valid authenticator code | Accepted; an old/wrong code is rejected | |
+
+## B. Emergency
+| ID | Steps | Expected | Result |
+|----|-------|----------|--------|
+| B1 | Open Emergency, tap 112 | Dialer opens with 112 | |
+| B2 | Tap each helpline (100, 101, 108, 1091, 1098, 14416, 1930) | Correct number dials | |
+| B3 | Open SOS with location denied | Clear message; call option still works | |
+| B4 | Open SOS with location allowed | Location is included only after permission | |
+
+## C. Reports
+| ID | Steps | Expected | Result |
+|----|-------|----------|--------|
+| C1 | Report a problem with category and description | Reference ID `NS-XXXXXX` shown | |
+| C2 | Submit with empty description | Validation message, nothing saved | |
+| C3 | Add a photo | Photo preview appears and saves | |
+| C4 | Tick anonymous | Report saved without name | |
+| C5 | Open My Reports | New report listed with status | |
+| C6 | Load sample data, open My Reports | `NS-DEMO23` (open) and `NS-DEMO45` (resolved, 4 stars) shown | |
+| C7 | Reload page | Reports still there | |
+
+## D. Categories and links
+| ID | Steps | Expected | Result |
+|----|-------|----------|--------|
+| D1 | Open each category from Home | Page renders, back button returns Home | |
+| D2 | Open 5 government links (DigiLocker, myScheme, Passport, Income Tax, PG Portal) | Official site opens in a new tab | |
+| D3 | Open a private-company link (food/shopping) | "Not a government service" note is visible | |
+
+## E. Nanba chat
+| ID | Steps | Expected | Result |
+|----|-------|----------|--------|
+| E1 | Type "hello" | Friendly greeting | |
+| E2 | Tap "I feel low" chip | Supportive reply | |
+| E3 | Type a message with self-harm intent | Reply shows Tele-MANAS 14416 and 112 call buttons | |
+| E4 | Turn read-aloud on, send message | Reply is spoken; turning off stops speech | |
+| E5 | Tap mic, speak | Text is sent, or a "not supported" message appears | |
+| E6 | Clear chat | Chat empties, app keeps working | |
+| E7 | Enter `http://example.com` as AI endpoint | Rejected: "Use an https address" | |
+
+## F. Language
+| ID | Steps | Expected | Result |
+|----|-------|----------|--------|
+| F1 | Switch to Hindi | Labels change; no raw keys visible | |
+| F2 | Switch to Tamil or another language online | Screen translates | |
+| F3 | Reload | Language is remembered | |
+| F4 | Offline, switch language | Graceful fallback to English, no crash | |
+
+## G. Offline and PWA
+| ID | Steps | Expected | Result |
+|----|-------|----------|--------|
+| G1 | Load once online, then go offline, reload | App opens | |
+| G2 | Offline, open saved reports and contacts | Data shown | |
+| G3 | Offline, open a feature needing internet | Clear message, no hang | |
+| G4 | Install to home screen | Icon, name and splash correct | |
+
+## H. Security
+| ID | Steps | Expected | Result |
+|----|-------|----------|--------|
+| H1 | Enter `<img src=x onerror=alert(1)>` in profile name, report, contact, chat | No alert; text is shown as plain text | |
+| H2 | Search the source for API keys or secrets | None found | |
+| H3 | Inspect `localStorage` | Only `ns_*` keys; no plain-text PIN or password | |
+
+## I. Accessibility
+| ID | Steps | Expected | Result |
+|----|-------|----------|--------|
+| I1 | Toggle system dark mode | All screens readable | |
+| I2 | Zoom text to 200% | No broken layout, no sideways scroll | |
+| I3 | Tab through the page with keyboard | Visible focus ring; all controls reachable | |
+| I4 | Use TalkBack / VoiceOver on Home and Report | Controls announced with sensible labels | |
+| I5 | Use read-aloud on a key screen | Spoken in the chosen language | |
+
+## J. Sample-data loading
+| ID | Steps | Expected | Result |
+|----|-------|----------|--------|
+| J1 | Run `load-sample-data.js` in console, reload | Demo profile, 3 contacts, 2 reports, 3 reminders appear | |
+| J2 | Delete all `ns_*` keys, reload | App returns to fresh state | |

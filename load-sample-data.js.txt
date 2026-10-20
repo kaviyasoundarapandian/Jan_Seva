@@ -1,0 +1,75 @@
+/* Jan Seva: load demo data into localStorage.
+   Paste in the browser console on the app page, then reload. */
+(function(){
+  var data = {
+  "prof": {
+    "n": "Demo User",
+    "a": "34",
+    "g": "Female",
+    "q": "Graduate",
+    "s": "Tamil Nadu",
+    "dt": "Dindigul",
+    "ph": "9876543210",
+    "em": "9876500000",
+    "bg": "O+",
+    "h": "",
+    "sl": ""
+  },
+  "contacts": [
+    {
+      "n": "Mother",
+      "p": "9876500001"
+    },
+    {
+      "n": "Neighbour Ravi",
+      "p": "9876500002"
+    },
+    {
+      "n": "Family Doctor",
+      "p": "9876500003"
+    }
+  ],
+  "reports": [
+    {
+      "id": "NS-DEMO23",
+      "cat": "Road",
+      "desc": "Large pothole near the bus stand causing accidents.",
+      "photo": null,
+      "loc": null,
+      "anon": false,
+      "at": 1760000000000,
+      "done": false,
+      "rating": 0
+    },
+    {
+      "id": "NS-DEMO45",
+      "cat": "Water",
+      "desc": "Street tap leaking for three days.",
+      "photo": null,
+      "loc": null,
+      "anon": true,
+      "at": 1759000000000,
+      "done": true,
+      "rating": 4
+    }
+  ],
+  "rem": [
+    {
+      "n": "Pay electricity bill",
+      "d": "2026-11-05"
+    },
+    {
+      "n": "Doctor appointment",
+      "d": "2026-11-12"
+    },
+    {
+      "n": "Renew passport",
+      "d": "2027-01-20"
+    }
+  ]
+};
+  Object.keys(data).forEach(function(k){
+    localStorage.setItem('ns_' + k, JSON.stringify(data[k]));
+  });
+  console.log('Jan Seva sample data loaded. Reload the page.');
+})();
