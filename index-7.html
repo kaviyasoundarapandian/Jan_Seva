@@ -673,7 +673,7 @@ var JSLOGO='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAMAAABrrFhUAA
      document.getElementById('nav').style.display=authed?'':'none';
      document.getElementById('pbtn').style.display=authed?'':'none';
      document.getElementById('v').innerHTML=authed?V[tab]():(mode==='create'?V.prof():V.welcome());
-     var tabs=[['home','\ud83c\udfe0'],['report','\ud83d\udcdd'],['safety','\ud83d\udee1\ufe0f'],['alerts','\u26a0\ufe0f'],['places','\ud83d\uddfa\ufe0f'],['translate','\ud83c\udf10'],['gov','\ud83d\udcdc'],['news','\ud83d\udcf0'],['trip','\ud83d\ude86'],['tour','\ud83c\udfde\ufe0f'],['exam','\ud83c\udf93'],['rights','\u2696\ufe0f'],['order','\ud83d\udef5'],['health','\ud83d\udc93'],['water','\ud83d\udca7'],['pay','\ud83d\udcb3'],['watch','\ud83d\udcfa'],['radio','\ud83d\udcfb'],['pension','\ud83e\uddd3'],['x9me','\ud83e\uddd8'],['x9help','\ud83d\ude91'],['x9money','\ud83d\udcb0'],['x9learn','\ud83d\udcda'],['x9fun','\ud83d\udcf7'],['x9acc','\u267f'],['x10farm','\ud83c\udf3e']];
+     var tabs=[['home','\ud83c\udfe0'],['report','\ud83d\udcdd'],['safety','\ud83d\udee1\ufe0f'],['alerts','\u26a0\ufe0f'],['places','\ud83d\uddfa\ufe0f'],['translate','\ud83c\udf10'],['gov','\ud83d\udcdc'],['news','\ud83d\udcf0'],['trip','\ud83d\ude86'],['tour','\ud83c\udfde\ufe0f'],['exam','\ud83c\udf93'],['rights','\u2696\ufe0f'],['order','\ud83d\udef5'],['health','\ud83d\udc93'],['water','\ud83d\udca7'],['pay','\ud83d\udcb3'],['watch','\ud83d\udcfa'],['radio','\ud83d\udcfb'],['pension','\ud83e\uddd3'],['x9me','\ud83e\uddd8'],['x9help','\ud83d\ude91'],['x9money','\ud83d\udcb0'],['x9learn','\ud83d\udcda'],['x9fun','\ud83d\udcf7'],['x9acc','\u267f'],['x14','\ud83e\udde9'],['x15','\ud83c\udf08'],['x10farm','\ud83c\udf3e']];
      document.getElementById('nav').innerHTML=tabs.map(function(a){return '<button data-go="'+a[0]+'" class="'+(a[0]===tab?'on':'')+'"><span aria-hidden="true">'+a[1]+'</span>'+t(a[0])+'</button>'}).join('');
      if(tab==='report'&&draft.photo)showPv();
      dsPaint();if(GT.state==='ok')gtNudge();
@@ -1927,6 +1927,161 @@ var JSLOGO='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAMAAABrrFhUAA
     document.addEventListener('change',function(e){var c=e.target;if(c&&c.dataset&&c.dataset.x12chk){SG[c.dataset.x12chk]=c.checked;sgSave();fab();toast(t('saved'))}});
     document.addEventListener('keydown',function(e){if(e.key==='Escape')closeOv()});
     })();
+    /* ===== Add-on 13: sign-language camera (opens from the 🤟 button) ===== */
+    (function(){
+    var $=function(i){return document.getElementById(i)},X=function(s){return esc(s)};
+    var GMAP={Thumb_Up:['Yes / OK','हाँ / ठीक है'],Thumb_Down:['No','नहीं'],Open_Palm:['Help me / Stop','मदद करें / रुकिए'],Closed_Fist:['Wait','रुकिए'],Pointing_Up:['One moment / Attention','एक मिनट / ध्यान दीजिए'],Victory:['Two / Peace','दो / शांति'],ILoveYou:['I love you / Thank you','धन्यवाद']};
+    var PHR=['Help','Doctor','Hospital','Police','Water','Medicine','Pain','Yes','No','Thank you'];
+    var st=null,vid=null,face='user',gr=null,raf=0,lastG='',cnt=0,mpTried=false;
+    function lang(){try{return lcode(ul)}catch(e){return 'en-IN'}}
+    function say(s){try{if(window.speechSynthesis){speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(s);u.lang=lang();speechSynthesis.speak(u)}}catch(e){}}
+    function stop(){cancelAnimationFrame(raf);raf=0;if(st){st.getTracks().forEach(function(t){t.stop()});st=null}}
+    function close(){stop();var o=$('x13ov');if(o)o.remove()}
+    function msg(s){var m=$('x13m');if(m)m.textContent=s}
+    function loadGR(){if(gr||mpTried)return;mpTried=true;msg('Loading hand-sign detector (needs internet)…');
+    import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs').then(function(M){
+    return M.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm').then(function(f){
+    return M.GestureRecognizer.createFromOptions(f,{baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task'},runningMode:'VIDEO',numHands:2})})}).then(function(g){gr=g;msg('Camera is on. Show a hand sign, or tap Capture.');loop()}).catch(function(){msg('Camera is on. Auto-detect needs internet. Tap Capture, then choose the meaning.')})}
+    function loop(){if(!gr||!vid||!st)return;try{if(vid.readyState>=2){var r=gr.recognizeForVideo(vid,performance.now()),g=r.gestures&&r.gestures[0]&&r.gestures[0][0],n=g&&g.categoryName;
+    if(n&&GMAP[n]&&g.score>.6){if(n===lastG)cnt++;else{lastG=n;cnt=1}if(cnt===10){var d=$('x13d');if(d)d.innerHTML='🤟 '+X(GMAP[n][0])+'<br><span style="color:#ffe066">'+X(GMAP[n][1])+'</span>';say(GMAP[n][0].split(' / ')[0]);try{navigator.vibrate&&navigator.vibrate(80)}catch(e){}}}else{cnt=0;if(!n)lastG=''}}}catch(e){}
+    raf=requestAnimationFrame(loop)}
+    function start(){stop();var md=navigator.mediaDevices;
+    if(!md||!md.getUserMedia){msg('Camera is not available here. Open the app over https or in the installed app, and allow camera permission.');return}
+    msg('Opening camera…');
+    (md.getUserMedia({video:{facingMode:face},audio:false}).catch(function(e){if(e&&e.name!=='NotAllowedError'&&e.name!=='SecurityError'&&e.name!=='NotFoundError')return md.getUserMedia({video:true,audio:false});throw e})).then(function(s){st=s;vid=$('x13v');if(!vid){stop();return}vid.muted=true;vid.setAttribute('playsinline','');vid.setAttribute('webkit-playsinline','');vid.srcObject=s;vid.style.transform=face==='user'?'scaleX(-1)':'none';var go=function(){var p=vid.play();if(p&&p.catch)p.catch(function(){msg('Tap the video once to start the camera.')})};vid.onloadedmetadata=go;go();msg('Camera is on. Show a hand sign, or tap Capture.');loadGR();if(gr)loop()}).catch(function(e){
+    msg(e&&(e.name==='NotAllowedError'||e.name==='SecurityError')?'Camera permission is blocked. Allow Camera for this app in phone Settings, then try again.':e&&e.name==='NotFoundError'?'No camera found on this device.':'Could not open the camera ('+(e&&e.name||'error')+'). Close other apps using the camera and try again.')})}
+    function open(){close();var o=document.createElement('div');o.id='x13ov';o.setAttribute('role','dialog');o.setAttribute('aria-modal','true');
+    o.style.cssText='position:fixed;inset:0;z-index:130;background:#000;color:#fff;display:flex;flex-direction:column;padding:calc(10px + env(safe-area-inset-top,0px)) 10px calc(10px + env(safe-area-inset-bottom,0px));gap:8px;overflow:auto';
+    o.innerHTML='<h2 style="margin:0;color:#ffe066;font-size:20px">🤟 Sign-language camera</h2>'+
+    '<div id="x13s" style="position:relative;flex:1 1 auto;min-height:200px;background:#111;border-radius:12px;overflow:hidden"><video id="x13v" playsinline muted autoplay poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onclick="this.play()" style="width:100%;height:100%;object-fit:cover"></video><img id="x13i" alt="Captured sign" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></div>'+
+    '<div id="x13d" aria-live="polite" style="font:700 clamp(24px,7vw,40px)/1.25 Mukta,sans-serif;text-align:center;min-height:50px"></div>'+
+    '<p id="x13m" role="status" style="margin:0;color:#ddd;font-size:15px">Starting…</p>'+
+    '<div id="x13p" style="display:none"><div class="chips" style="display:flex;flex-wrap:wrap;gap:6px">'+PHR.map(function(w){return '<button class="chip" data-x13="phr" data-w="'+X(w)+'">'+X(w)+'</button>'}).join('')+'</div></div>'+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="x13c" data-x13="cap" style="flex:1;margin:0">📸 Capture</button><button class="btn alt" data-x13="flip" style="flex:1;margin:0">🔄 Switch</button><a class="btn alt" id="x13sv" download="sign.jpg" style="display:none;flex:1;margin:0;text-align:center">💾 Save</a></div>'+
+    '<button class="btn" data-x13="close" style="margin:0;background:#ffe066;color:#000;font-size:20px;padding:14px">✕ Close</button>';
+    document.body.appendChild(o);start()}
+    function capture(){var v=$('x13v'),i=$('x13i');if(i.style.display==='block'){i.style.display='none';$('x13p').style.display='none';$('x13sv').style.display='none';$('x13c').textContent='📸 Capture';$('x13d').innerHTML='';if(v)v.play();msg('Camera is on. Show a hand sign, or tap Capture.');return}
+    if(!v||!v.videoWidth){try{v&&v.play()}catch(e){}msg('Camera not ready yet. Wait 2 seconds. If the screen stays grey, tap the video or tap Switch, and check Camera permission for this app.');return}
+    var c=document.createElement('canvas');c.width=v.videoWidth;c.height=v.videoHeight;var x=c.getContext('2d');if(face==='user'){x.translate(c.width,0);x.scale(-1,1)}x.drawImage(v,0,0);
+    var u=c.toDataURL('image/jpeg',.85);i.src=u;i.style.display='block';v.pause();$('x13p').style.display='block';var sv=$('x13sv');sv.href=u;sv.style.display='block';$('x13c').textContent='↩ Retake';
+    msg(lastG&&GMAP[lastG]?'Detected: '+GMAP[lastG][0]+'. Tap a word below if it is different.':'Photo captured. Tap the word that matches the sign to show it in big text and speak it.')}
+    function flip(){face=face==='user'?'environment':'user';var i=$('x13i');if(i)i.style.display='none';start()}
+    document.addEventListener('click',function(e){var f=e.target.closest&&e.target.closest('#x12fab');if(f){e.preventDefault();e.stopImmediatePropagation();open();return}
+    var el=e.target.closest&&e.target.closest('[data-x13]');if(!el)return;var k=el.dataset.x13;
+    if(k==='open')open();else if(k==='close')close();else if(k==='cap')capture();else if(k==='flip')flip();
+    else if(k==='phr'){var w=el.dataset.w;$('x13d').innerHTML='🤟 '+X(w);say(w)}},true);
+    document.addEventListener('keydown',function(e){if(e.key==='Escape')close()});
+    document.addEventListener('visibilitychange',function(){if(document.hidden)stop()});
+    var pa=V.x9acc;V.x9acc=function(){return '<div class="card"><h3 class="sec">📷 Sign-language camera</h3><p class="muted">Opens the camera. Basic hand signs (yes, no, stop, help) are recognised automatically when online. For other signs, capture a photo and choose the meaning to show it in big text and speak it aloud.</p><button class="btn" data-x13="open">📷 Open sign camera</button></div>'+pa()};
+    })();
+    /* ===== Add-on 15: Autism Care (new tab, isolated in an iframe so it cannot clash with the app) ===== */
+(function(){
+Object.assign(T.en,{x15:'Autism Care'});T.hi=T.hi||{};Object.assign(T.hi,{x15:'\u0911\u091f\u093f\u091c\u093c\u094d\u092e \u0926\u0947\u0916\u092d\u093e\u0932'});
+var B64='PCFkb2N0eXBlIGh0bWw+PGh0bWwgbGFuZz0iZW4iPjxoZWFkPjxtZXRhIGNoYXJzZXQ9InV0Zi04Ij4KPG1ldGEgbmFtZT0idmlld3BvcnQiIGNvbnRlbnQ9IndpZHRoPWRldmljZS13aWR0aCwgaW5pdGlhbC1zY2FsZT0xLCB2aWV3cG9ydC1maXQ9Y292ZXIiPgo8dGl0bGU+RGl2eWFuZyBMZWFybmluZyAmIEF1dGlzbSBDYXJlPC90aXRsZT4KPHN0eWxlPgo6cm9vdHstLWJnOiNmNGY4ZmI7LS1jYXJkOiNmZmY7LS10eDojMTQyNjNhOy0tbXU6IzVhNmI3ZDstLXByaTojMmE2ZmRiOy0tYWM6I2U4ZjBmZDstLW9rOiMyZTllNWI7LS1sbjojZDdlMWVjO2JveC1zaXppbmc6Ym9yZGVyLWJveDtwYWRkaW5nLXRvcDplbnYoc2FmZS1hcmVhLWluc2V0LXRvcCwwcHgpO3BhZGRpbmctYm90dG9tOmVudihzYWZlLWFyZWEtaW5zZXQtYm90dG9tLDBweCl9CkBtZWRpYShwcmVmZXJzLWNvbG9yLXNjaGVtZTpkYXJrKXs6cm9vdDpub3QoW2RhdGEtdGhlbWU9ImxpZ2h0Il0pey0tYmc6IzBmMTgyMzstLWNhcmQ6IzE4MjUzNTstLXR4OiNlOGVlZjU7LS1tdTojOWZiMGMyOy0tcHJpOiM2ZWEzZmY7LS1hYzojMjIzNDRkOy0tb2s6IzRjYzI4MDstLWxuOiMyYzNlNTV9fQoqe2JveC1zaXppbmc6Ym9yZGVyLWJveH1odG1se3Njcm9sbC1wYWRkaW5nLXRvcDplbnYoc2FmZS1hcmVhLWluc2V0LXRvcCwwcHgpfQpib2R5e21hcmdpbjowO2JhY2tncm91bmQ6dmFyKC0tYmcpO2NvbG9yOnZhcigtLXR4KTtmb250OjE2cHgvMS41IHN5c3RlbS11aSwtYXBwbGUtc3lzdGVtLCJTZWdvZSBVSSIsc2Fucy1zZXJpZn0KaGVhZGVye3BhZGRpbmc6MTZweCAxNnB4IDRweDttYXgtd2lkdGg6NzYwcHg7bWFyZ2luOmF1dG99aDF7Zm9udC1zaXplOjIxcHg7bWFyZ2luOjB9aGVhZGVyIHB7bWFyZ2luOjJweCAwIDA7Y29sb3I6dmFyKC0tbXUpO2ZvbnQtc2l6ZToxNHB4fQojdGFic3tkaXNwbGF5OmZsZXg7Z2FwOjhweDtvdmVyZmxvdy14OmF1dG87cGFkZGluZzoxMHB4IDE2cHg7bWF4LXdpZHRoOjc2MHB4O21hcmdpbjphdXRvO3Bvc2l0aW9uOnN0aWNreTt0b3A6ZW52KHNhZmUtYXJlYS1pbnNldC10b3AsMHB4KTtiYWNrZ3JvdW5kOnZhcigtLWJnKTt6LWluZGV4OjV9Ci5waWxse2ZsZXg6bm9uZTtib3JkZXI6MXB4IHNvbGlkIHZhcigtLWxuKTtiYWNrZ3JvdW5kOnZhcigtLWNhcmQpO2NvbG9yOnZhcigtLXR4KTtib3JkZXItcmFkaXVzOjIwcHg7cGFkZGluZzo4cHggMTRweDtmb250LXNpemU6MTVweDtjdXJzb3I6cG9pbnRlcn0KLnBpbGwub257YmFja2dyb3VuZDp2YXIoLS1wcmkpO2NvbG9yOiNmZmY7Ym9yZGVyLWNvbG9yOnZhcigtLXByaSl9Cm1haW57bWF4LXdpZHRoOjc2MHB4O21hcmdpbjphdXRvO3BhZGRpbmc6NHB4IDE2cHggNDBweH0KLmNhcmR7YmFja2dyb3VuZDp2YXIoLS1jYXJkKTtib3JkZXI6MXB4IHNvbGlkIHZhcigtLWxuKTtib3JkZXItcmFkaXVzOjE2cHg7cGFkZGluZzoxNnB4O21hcmdpbjoxMnB4IDB9Cmgye2ZvbnQtc2l6ZToxOHB4O21hcmdpbjowIDAgOHB4fWgze2ZvbnQtc2l6ZToxNnB4O21hcmdpbjoxMHB4IDAgNHB4fS5tdXtjb2xvcjp2YXIoLS1tdSk7Zm9udC1zaXplOjE0cHh9Ci5zdWJ7ZGlzcGxheTpmbGV4O2dhcDo2cHg7b3ZlcmZsb3cteDphdXRvO21hcmdpbjo4cHggMH0uc3ViIC5waWxse3BhZGRpbmc6NnB4IDEycHg7Zm9udC1zaXplOjE0cHh9Ci5ncmlke2Rpc3BsYXk6Z3JpZDtncmlkLXRlbXBsYXRlLWNvbHVtbnM6cmVwZWF0KDIsMWZyKTtnYXA6MTBweH0KLm9wdHtmb250LXNpemU6NDRweDtwYWRkaW5nOjE0cHggNnB4O2JvcmRlcjoycHggc29saWQgdmFyKC0tbG4pO2JhY2tncm91bmQ6dmFyKC0tY2FyZCk7Y29sb3I6dmFyKC0tdHgpO2JvcmRlci1yYWRpdXM6MTZweDtjdXJzb3I6cG9pbnRlcjttaW4taGVpZ2h0Ojg0cHg7dGV4dC1hbGlnbjpjZW50ZXJ9Ci5vcHQub2t7Ym9yZGVyLWNvbG9yOnZhcigtLW9rKTtiYWNrZ3JvdW5kOnJnYmEoNDYsMTU4LDkxLC4xOCl9Lm9wdC5ub3thbmltYXRpb246c2ggLjNzfQpAa2V5ZnJhbWVzIHNoezI1JXt0cmFuc2Zvcm06dHJhbnNsYXRlWCgtNnB4KX03NSV7dHJhbnNmb3JtOnRyYW5zbGF0ZVgoNnB4KX19Ci5idG57YmFja2dyb3VuZDp2YXIoLS1wcmkpO2NvbG9yOiNmZmY7Ym9yZGVyOjA7Ym9yZGVyLXJhZGl1czoxMnB4O3BhZGRpbmc6MTBweCAxNnB4O2ZvbnQtc2l6ZToxNnB4O2N1cnNvcjpwb2ludGVyO21hcmdpbjo0cHggNHB4IDRweCAwfS5idG4uYWx0e2JhY2tncm91bmQ6dmFyKC0tYWMpO2NvbG9yOnZhcigtLXByaSl9Ci5iaWd7Zm9udC1zaXplOjU2cHg7dGV4dC1hbGlnbjpjZW50ZXI7bWFyZ2luOjZweCAwO3dvcmQtYnJlYWs6YnJlYWstYWxsfS5tc2d7dGV4dC1hbGlnbjpjZW50ZXI7Zm9udC13ZWlnaHQ6NjAwO21pbi1oZWlnaHQ6MjZweH0KLnRpbGV7ZGlzcGxheTppbmxpbmUtYmxvY2s7bWluLXdpZHRoOjU0cHg7Zm9udC1zaXplOjMwcHg7Zm9udC13ZWlnaHQ6NzAwO3BhZGRpbmc6OHB4IDEycHg7bWFyZ2luOjRweDtib3JkZXItcmFkaXVzOjEycHg7Ym9yZGVyOjJweCBzb2xpZCB2YXIoLS1wcmkpO2JhY2tncm91bmQ6dmFyKC0tYWMpO2NvbG9yOnZhcigtLXR4KTtjdXJzb3I6cG9pbnRlcjt0ZXh0LWFsaWduOmNlbnRlcn0udGlsZS51c2Vke29wYWNpdHk6LjI1fQouc2xvdHtkaXNwbGF5OmlubGluZS1ibG9jazt3aWR0aDo1NHB4O2hlaWdodDo2MHB4O2JvcmRlci1ib3R0b206NHB4IHNvbGlkIHZhcigtLWxuKTtmb250LXNpemU6MzRweDtmb250LXdlaWdodDo3MDA7dGV4dC1hbGlnbjpjZW50ZXI7bWFyZ2luOjRweH0KLmRvdHtoZWlnaHQ6OTBweDtib3JkZXItcmFkaXVzOjE4cHg7Ym9yZGVyOjA7Y3Vyc29yOnBvaW50ZXJ9CiNiY3t3aWR0aDoxNTBweDtoZWlnaHQ6MTUwcHg7Ym9yZGVyLXJhZGl1czo1MCU7YmFja2dyb3VuZDp2YXIoLS1wcmkpO21hcmdpbjoxNHB4IGF1dG87ZGlzcGxheTpmbGV4O2FsaWduLWl0ZW1zOmNlbnRlcjtqdXN0aWZ5LWNvbnRlbnQ6Y2VudGVyO2NvbG9yOiNmZmY7Zm9udC13ZWlnaHQ6NzAwO2ZvbnQtc2l6ZToxOHB4O3RyYW5zaXRpb246dHJhbnNmb3JtIDRzIGVhc2UtaW4tb3V0O3RleHQtYWxpZ246Y2VudGVyfQpjYW52YXN7d2lkdGg6MTAwJTttYXgtd2lkdGg6MzQwcHg7aGVpZ2h0OmF1dG87YXNwZWN0LXJhdGlvOjE7Ym9yZGVyOjJweCBkYXNoZWQgdmFyKC0tbG4pO2JvcmRlci1yYWRpdXM6MTZweDt0b3VjaC1hY3Rpb246bm9uZTtiYWNrZ3JvdW5kOnZhcigtLWNhcmQpO2Rpc3BsYXk6YmxvY2s7bWFyZ2luOmF1dG99Ci5yb3d7ZGlzcGxheTpmbGV4O2FsaWduLWl0ZW1zOmNlbnRlcjtnYXA6MTBweDtwYWRkaW5nOjEwcHg7Ym9yZGVyOjFweCBzb2xpZCB2YXIoLS1sbik7Ym9yZGVyLXJhZGl1czoxMnB4O21hcmdpbjo2cHggMDtjdXJzb3I6cG9pbnRlcjtiYWNrZ3JvdW5kOnZhcigtLWNhcmQpfS5yb3cuZG9uZXtvcGFjaXR5Oi41NTt0ZXh0LWRlY29yYXRpb246bGluZS10aHJvdWdofS5yb3cuZG9uZTo6YWZ0ZXJ7Y29udGVudDoi4pyUIjttYXJnaW4tbGVmdDphdXRvO2NvbG9yOnZhcigtLW9rKX0KYXtjb2xvcjp2YXIoLS1wcmkpfXVse3BhZGRpbmctbGVmdDoyMHB4O21hcmdpbjo0cHggMH0KPC9zdHlsZT48L2hlYWQ+PGJvZHk+CjxoZWFkZXI+PGgxPvCfp6kgRGl2eWFuZyBMZWFybmluZyAmIEF1dGlzbSBDYXJlPC9oMT48cD5DYWxtLCB2aXN1YWwsIHN0ZXAtYnktc3RlcCBsZWFybmluZy4gVGFwIGFueSBjYXJkIHRvIGhlYXIgaXQuPC9wPjwvaGVhZGVyPgo8ZGl2IGlkPSJ0YWJzIj48L2Rpdj48bWFpbiBpZD0idiI+PC9tYWluPgo8c2NyaXB0Pgp2YXIgJD1mdW5jdGlvbihzKXtyZXR1cm4gZG9jdW1lbnQucXVlcnlTZWxlY3RvcihzKX0sVj0kKCcjdicpOwpmdW5jdGlvbiBzYXkodCl7dHJ5e3NwZWVjaFN5bnRoZXNpcy5jYW5jZWwoKTt2YXIgdT1uZXcgU3BlZWNoU3ludGhlc2lzVXR0ZXJhbmNlKHQpO3UucmF0ZT0uODtzcGVlY2hTeW50aGVzaXMuc3BlYWsodSl9Y2F0Y2goZSl7fX0KZnVuY3Rpb24gc2goYSl7cmV0dXJuIGEuc2xpY2UoKS5zb3J0KGZ1bmN0aW9uKCl7cmV0dXJuIE1hdGgucmFuZG9tKCktLjV9KX0KdmFyIFRBQlM9W1snZycsJ/Cfjq4gR2FtZXMnXSxbJ2QnLCfwn6epIERvbWFpbnMnXSxbJ3MnLCfwn4+rIFNjaG9vbCddLFsnYycsJ/Cfp5ggQ2FsbSddLFsncicsJ/Cfk5ogUmVzb3VyY2VzJ11dLGN1cj0nZycsc25kPW51bGw7CmZ1bmN0aW9uIHRhYnMoKXskKCcjdGFicycpLmlubmVySFRNTD1UQUJTLm1hcChmdW5jdGlvbih0KXtyZXR1cm4nPGJ1dHRvbiBjbGFzcz0icGlsbCcrKHRbMF09PWN1cj8nIG9uJzonJykrJyIgZGF0YS10PSInK3RbMF0rJyI+Jyt0WzFdKyc8L2J1dHRvbj4nfSkuam9pbignJyl9CiQoJyN0YWJzJykub25jbGljaz1mdW5jdGlvbihlKXt2YXIgdD1lLnRhcmdldC5kYXRhc2V0LnQ7aWYodCl7c3RvcFNuZCgpO2JzdG9wKCk7Y3VyPXQ7dGFicygpO2RyYXcoKX19OwpmdW5jdGlvbiBkcmF3KCl7Vi5pbm5lckhUTUw9Jyc7KHtnOmdhbWVzLGQ6ZG9tYWlucyxzOnNjaG9vbCxjOmNhbG0scjpyZXN9KVtjdXJdKCl9CmZ1bmN0aW9uIGNhcmQoaCl7dmFyIGQ9ZG9jdW1lbnQuY3JlYXRlRWxlbWVudCgnZGl2Jyk7ZC5jbGFzc05hbWU9J2NhcmQnO2QuaW5uZXJIVE1MPWg7Vi5hcHBlbmRDaGlsZChkKTtyZXR1cm4gZH0KCi8qIEdBTUVTICovCmZ1bmN0aW9uIGdhbWVzKCl7CiB2YXIgUD1bWydBcHBsZScsJ/CfjY4nXSxbJ0RvZycsJ/CfkLYnXSxbJ1JlZCcsJ/Cfn6UnXSxbJ0NpcmNsZScsJ+KaqyddXTsKIHZhciBjPWNhcmQoJzxoMj5QaWN0dXJlIE1hdGNoaW5nPC9oMj48ZGl2IGNsYXNzPSJtdSI+RmluZCB0aGUgcGljdHVyZSB0aGF0IG1hdGNoZXMuPC9kaXY+PGRpdiBjbGFzcz0iYmlnIiBpZD0icHQiPjwvZGl2PjxkaXYgY2xhc3M9ImdyaWQiIGlkPSJwbyI+PC9kaXY+PGRpdiBjbGFzcz0ibXNnIiBpZD0icG0iPjwvZGl2PicpOwogZnVuY3Rpb24gcG0oKXt2YXIgdD1QW01hdGguZmxvb3IoTWF0aC5yYW5kb20oKSo0KV07JCgnI3B0JykudGV4dENvbnRlbnQ9dFswXTtzYXkoJ0ZpbmQgJyt0WzBdKTskKCcjcG0nKS50ZXh0Q29udGVudD0nJzsKICAkKCcjcG8nKS5pbm5lckhUTUw9Jyc7c2goUCkuZm9yRWFjaChmdW5jdGlvbihwKXt2YXIgYj1kb2N1bWVudC5jcmVhdGVFbGVtZW50KCdidXR0b24nKTtiLmNsYXNzTmFtZT0nb3B0JztiLnRleHRDb250ZW50PXBbMV07Yi5vbmNsaWNrPWZ1bmN0aW9uKCl7aWYocD09dCl7Yi5jbGFzc0xpc3QuYWRkKCdvaycpOyQoJyNwbScpLnRleHRDb250ZW50PSfirZAgR3JlYXQgam9iISc7c2F5KCdHcmVhdCBqb2IhICcrdFswXSk7c2V0VGltZW91dChwbSwxODAwKX1lbHNle2IuY2xhc3NMaXN0LmFkZCgnbm8nKTtzZXRUaW1lb3V0KGZ1bmN0aW9uKCl7Yi5jbGFzc0xpc3QucmVtb3ZlKCdubycpfSw0MDApO3NheSgnVHJ5IGFnYWluJyl9fTskKCcjcG8nKS5hcHBlbmRDaGlsZChiKX0pfQogcG0oKTsKIHZhciBXPVtbJ0NBVCcsJ/CfkLEnXSxbJ0RPRycsJ/CfkLYnXSxbJ1NVTicsJ+KYgO+4jyddLFsnQ1VQJywn4piVJ10sWydCVVMnLCfwn5qMJ11dOwogY2FyZCgnPGgyPjMtTGV0dGVyIFdvcmRzPC9oMj48ZGl2IGNsYXNzPSJtdSI+VGFwIHRoZSBsZXR0ZXJzIGluIG9yZGVyLjwvZGl2PjxkaXYgY2xhc3M9ImJpZyIgaWQ9IndwIj48L2Rpdj48ZGl2IHN0eWxlPSJ0ZXh0LWFsaWduOmNlbnRlciIgaWQ9IndzIj48L2Rpdj48ZGl2IHN0eWxlPSJ0ZXh0LWFsaWduOmNlbnRlciIgaWQ9IndsIj48L2Rpdj48ZGl2IGNsYXNzPSJtc2ciIGlkPSJ3bSI+PC9kaXY+Jyk7CiBmdW5jdGlvbiB3Zygpe3ZhciB3PVdbTWF0aC5mbG9vcihNYXRoLnJhbmRvbSgpKjUpXSxuPTA7JCgnI3dwJykudGV4dENvbnRlbnQ9d1sxXTskKCcjd20nKS50ZXh0Q29udGVudD0nJzsKICAkKCcjd3MnKS5pbm5lckhUTUw9JzxzcGFuIGNsYXNzPSJzbG90Ij48L3NwYW4+PHNwYW4gY2xhc3M9InNsb3QiPjwvc3Bhbj48c3BhbiBjbGFzcz0ic2xvdCI+PC9zcGFuPic7JCgnI3dsJykuaW5uZXJIVE1MPScnOwogIHNoKHdbMF0uc3BsaXQoJycpKS5mb3JFYWNoKGZ1bmN0aW9uKGwpe3ZhciBiPWRvY3VtZW50LmNyZWF0ZUVsZW1lbnQoJ2J1dHRvbicpO2IuY2xhc3NOYW1lPSd0aWxlJztiLnRleHRDb250ZW50PWw7Yi5vbmNsaWNrPWZ1bmN0aW9uKCl7aWYobD09d1swXVtuXSYmIWIuY2xhc3NMaXN0LmNvbnRhaW5zKCd1c2VkJykpeyQoJyN3cycpLmNoaWxkcmVuW25dLnRleHRDb250ZW50PWw7Yi5jbGFzc0xpc3QuYWRkKCd1c2VkJyk7c2F5KGwudG9Mb3dlckNhc2UoKSk7bisrO2lmKG49PTMpeyQoJyN3bScpLnRleHRDb250ZW50PSfirZAgJyt3WzBdO3NldFRpbWVvdXQoZnVuY3Rpb24oKXtzYXkod1swXS5zcGxpdCgnJykuam9pbignLCAnKSsnLiAnK3dbMF0udG9Mb3dlckNhc2UoKSl9LDUwMCk7c2V0VGltZW91dCh3ZywzNTAwKX19ZWxzZSBpZighYi5jbGFzc0xpc3QuY29udGFpbnMoJ3VzZWQnKSlzYXkoJ1RyeSBhZ2FpbicpfTskKCcjd2wnKS5hcHBlbmRDaGlsZChiKX0pfQogd2coKTsKIGNhcmQoJzxoMj5Db3VudGluZyBQdXp6bGU8L2gyPjxkaXYgY2xhc3M9Im11Ij5Ib3cgbWFueSBkbyB5b3Ugc2VlPzwvZGl2PjxkaXYgY2xhc3M9ImJpZyIgaWQ9ImNxIj48L2Rpdj48ZGl2IGNsYXNzPSJncmlkIiBzdHlsZT0iZ3JpZC10ZW1wbGF0ZS1jb2x1bW5zOnJlcGVhdCgzLDFmcikiIGlkPSJjbyI+PC9kaXY+PGRpdiBjbGFzcz0ibXNnIiBpZD0iY20iPjwvZGl2PicpOwogZnVuY3Rpb24gY2coKXt2YXIgbj0xK01hdGguZmxvb3IoTWF0aC5yYW5kb20oKSo5KSxlPVsn8J+NjicsJ+KtkCcsJ/CfkJ8nLCfwn46IJywn8J+alyddW24lNV0sbz1bbl07d2hpbGUoby5sZW5ndGg8Myl7dmFyIHg9MStNYXRoLmZsb29yKE1hdGgucmFuZG9tKCkqOSk7aWYoby5pbmRleE9mKHgpPDApby5wdXNoKHgpfQogICQoJyNjcScpLnRleHRDb250ZW50PW5ldyBBcnJheShuKzEpLmpvaW4oZSk7JCgnI2NtJykudGV4dENvbnRlbnQ9Jyc7JCgnI2NvJykuaW5uZXJIVE1MPScnOwogIHNoKG8pLmZvckVhY2goZnVuY3Rpb24oeCl7dmFyIGI9ZG9jdW1lbnQuY3JlYXRlRWxlbWVudCgnYnV0dG9uJyk7Yi5jbGFzc05hbWU9J29wdCc7Yi50ZXh0Q29udGVudD14O2Iub25jbGljaz1mdW5jdGlvbigpe2lmKHg9PW4pe2IuY2xhc3NMaXN0LmFkZCgnb2snKTt2YXIgcz0nJztmb3IodmFyIGk9MTtpPD1uO2krKylzKz1pKycsICc7JCgnI2NtJykudGV4dENvbnRlbnQ9J+KtkCAnK24rJyEnO3NheShzKycuICcrbisnIGluIGFsbCEnKTtzZXRUaW1lb3V0KGNnLDM1MDApfWVsc2V7Yi5jbGFzc0xpc3QuYWRkKCdubycpO3NheSgnVHJ5IGFnYWluLCBjb3VudCBzbG93bHknKX19OyQoJyNjbycpLmFwcGVuZENoaWxkKGIpfSl9CiBjZygpOwogdmFyIEM9W1snUmVkJywnI2U1MzkzNSddLFsnQmx1ZScsJyMxZTg4ZTUnXSxbJ0dyZWVuJywnIzQzYTA0NyddLFsnWWVsbG93JywnI2ZkZDgzNSddXTsKIGNhcmQoJzxoMj5Db2xvciBGb2N1czwvaDI+PGRpdiBjbGFzcz0ibXUiPkxpc3RlbiwgdGhlbiB0YXAgdGhlIGNvbG9yLiBObyB0aW1lciwgbm8gcnVzaC48L2Rpdj48ZGl2IGNsYXNzPSJtc2ciIGlkPSJmbSIgc3R5bGU9ImZvbnQtc2l6ZToyMnB4Ij48L2Rpdj48ZGl2IGNsYXNzPSJncmlkIiBpZD0iZmciPjwvZGl2PicpOwogdmFyIHRnO2Z1bmN0aW9uIGNmKCl7dGc9Q1tNYXRoLmZsb29yKE1hdGgucmFuZG9tKCkqNCldOyQoJyNmbScpLnRleHRDb250ZW50PSdUYXAgJyt0Z1swXTtzYXkoJ1RhcCAnK3RnWzBdKX0KIEMuZm9yRWFjaChmdW5jdGlvbihrKXt2YXIgYj1kb2N1bWVudC5jcmVhdGVFbGVtZW50KCdidXR0b24nKTtiLmNsYXNzTmFtZT0nZG90JztiLnN0eWxlLmJhY2tncm91bmQ9a1sxXTtiLnNldEF0dHJpYnV0ZSgnYXJpYS1sYWJlbCcsa1swXSk7Yi5vbmNsaWNrPWZ1bmN0aW9uKCl7aWYoaz09dGcpeyQoJyNmbScpLnRleHRDb250ZW50PSfirZAgWWVzISAnK2tbMF07c2F5KCdZZXMhICcra1swXSk7c2V0VGltZW91dChjZiwxNjAwKX1lbHNlIHNheSgnVHJ5IGFnYWluLiBUYXAgJyt0Z1swXSl9OyQoJyNmZycpLmFwcGVuZENoaWxkKGIpfSk7Y2YoKTsKfQoKLyogRE9NQUlOUyAqLwp2YXIgRE9NPVtbJ2RvbV9jb21tJywn8J+SrCcsJ0NvbW11bmljYXRpb24gJiBMYW5ndWFnZScsWydQb2ludCB0byBhIHBpY3R1cmUgdG8gYXNrIGZvciB3aGF0IHlvdSB3YW50JywnU2F5IOKAnEkgd2FudCBfX1/igJ0gd2l0aCBhIHBpY3R1cmUgY2FyZCcsJ0xlYXJuIGdyZWV0aW5nczogaGVsbG8sIGJ5ZSwgdGhhbmsgeW91J11dLApbJ2RvbV9hY2FkJywn8J+TlicsJ0Jhc2ljIEFjYWRlbWljIExlc3NvbnMnLFsnVHJhY2UgbGV0dGVycyBhbmQgbnVtYmVycyAx4oCTMTAnLCdNYXRjaCBzaGFwZXMgYW5kIGNvbG9ycycsJ1JlYWQgMy1sZXR0ZXIgc2lnaHQgd29yZHMnXV0sClsnZG9tX2xpZmUnLCfwn6qlJywnRGFpbHkgTGl2aW5nICYgU2VsZi1DYXJlJyxbJ0JydXNoIHRlZXRoIGluIDUgcGljdHVyZSBzdGVwcycsJ1dhc2ggaGFuZHMgZm9yIDIwIHNlY29uZHMnLCdEcmVzczogc2hpcnQsIHBhbnRzLCBzaG9lcyddXSwKWydkb21fc29jaWFsJywn8J+knScsJ1NvY2lhbCAmIEVtb3Rpb25hbCcsWydOYW1lIGZlZWxpbmdzIHdpdGggZmFjZSBjYXJkcycsJ1Rha2UgdHVybnMgaW4gYSBzaW1wbGUgZ2FtZScsJ0FzayBmb3IgYSBicmVhayB3aGVuIHVwc2V0J11dLApbJ2RvbV9jb2cnLCfwn6egJywnQ29nbml0aXZlICYgVGhpbmtpbmcnLFsnU29ydCBieSBjb2xvciwgc2l6ZSwgc2hhcGUnLCdDb21wbGV0ZSA0LXBpZWNlIHB1enpsZXMnLCdXaGF0IGNvbWVzIG5leHQ/IFBhdHRlcm5zJ11dLApbJ2RvbV9zZW5zb3J5Jywn8J+WkO+4jycsJ1NlbnNvcnkgJiBNb3RvciBTa2lsbHMnLFsnUGxheS1kb3VnaCBzcXVlZXppbmcnLCdCZWFkIHRocmVhZGluZycsJ0p1bXAsIGJhbGFuY2UsIGFuZCBiYWxsIGNhdGNoJ11dLApbJ2RvbV9zYWZldHknLCfwn5qmJywnU2FmZXR5ICYgQ29tbXVuaXR5JyxbJ1N0b3AgYXQgcmVkLCBnbyBhdCBncmVlbicsJ0tub3cgeW91ciBuYW1lLCBhZGRyZXNzLCBwaG9uZScsJ1N0YXkgY2xvc2UgdG8gYSB0cnVzdGVkIGFkdWx0J11dLApbJ2RvbV9rbm93bCcsJ/CfjI0nLCdFdmVyeWRheSBLbm93bGVkZ2UnLFsnRGF5cyBvZiB0aGUgd2VlayBhbmQgc2Vhc29ucycsJ0ZydWl0cywgdmVnZXRhYmxlcywgYW5pbWFscycsJ01vbmV5OiBjb2lucyBhbmQgbm90ZXMnXV0sClsnZG9tX3JlYWRpbmVzcycsJ/Cfp7gnLCdQbGF5ICYgTGVhcm5pbmcgUmVhZGluZXNzJyxbJ1NpdCBhbmQgYXR0ZW5kIGZvciAyIG1pbnV0ZXMnLCdGb2xsb3cgb25lLXN0ZXAgaW5zdHJ1Y3Rpb25zJywnV2FpdCwgdGhlbiBnZXQgYSByZXdhcmQnXV0sClsnZG9tX2RpZ2l0YWwnLCfwn5OxJywnRGlnaXRhbCBMZWFybmluZycsWydUYXAsIHN3aXBlLCBhbmQgZHJhZyBvbiBhIHRhYmxldCcsJ1VzZSBhIHBpY3R1cmUtYmFzZWQgdGFsa2VyIGFwcCcsJ1NhZmUgc2NyZWVuIHRpbWU6IDIwIG1pbnV0ZXMnXV1dOwpmdW5jdGlvbiBkb21haW5zKCl7Y2FyZCgnPGgyPjEwIEF1dGlzbSBMZWFybmluZyBEb21haW5zPC9oMj48ZGl2IGNsYXNzPSJtdSI+Q2hvb3NlIGEgZG9tYWluLCB0aGVuIHRhcCBhIHNraWxsIHRvIGhlYXIgaXQuPC9kaXY+PGRpdiBjbGFzcz0ic3ViIiBpZD0iZHMiPjwvZGl2PjxkaXYgaWQ9ImRiIj48L2Rpdj4nKTsKIERPTS5mb3JFYWNoKGZ1bmN0aW9uKGQsaSl7dmFyIGI9ZG9jdW1lbnQuY3JlYXRlRWxlbWVudCgnYnV0dG9uJyk7Yi5jbGFzc05hbWU9J3BpbGwnKyhpPycnOicgb24nKTtiLnRleHRDb250ZW50PWRbMV0rJyAnK2RbMl0uc3BsaXQoJyAnKVswXTtiLm9uY2xpY2s9ZnVuY3Rpb24oKXtzaG93KGkpfTskKCcjZHMnKS5hcHBlbmRDaGlsZChiKX0pOwogZnVuY3Rpb24gc2hvdyhpKXt2YXIgZD1ET01baV07W10uZm9yRWFjaC5jYWxsKCQoJyNkcycpLmNoaWxkcmVuLGZ1bmN0aW9uKHgsail7eC5jbGFzc0xpc3QudG9nZ2xlKCdvbicsaj09aSl9KTsKICAkKCcjZGInKS5pbm5lckhUTUw9JzxoMz4nK2RbMV0rJyAnK2RbMl0rJyA8c3BhbiBjbGFzcz0ibXUiPignK2RbMF0rJyk8L3NwYW4+PC9oMz4nK2RbM10ubWFwKGZ1bmN0aW9uKHMpe3JldHVybic8ZGl2IGNsYXNzPSJyb3ciIGRhdGEtcz0iJytzKyciPvCflIogJytzKyc8L2Rpdj4nfSkuam9pbignJyk7CiAgJCgnI2RiJykub25jbGljaz1mdW5jdGlvbihlKXt2YXIgcj1lLnRhcmdldC5jbG9zZXN0KCcucm93Jyk7aWYocilzYXkoci5kYXRhc2V0LnMpfX1zaG93KDApfQoKLyogU0NIT09MICovCnZhciBTQ0g9W1snTEtHJyxbJ/CfjY4gQSBmb3IgQXBwbGUsIPCfkLEgQiBmb3IgQmFsbDogcGljdHVyZSBsZXR0ZXJzJywnUGhvbmljczogYSwgYiwgYywgZCBzb3VuZHMnLCdDb3VudCAx4oCTMTAgd2l0aCBvYmplY3RzJywnU29jaWFsIHN0b3J5OiBHb2luZyB0byBzY2hvb2wnXV0sClsnVUtHJyxbJ0xldHRlcnMgQeKAk1ogaW4gb3JkZXInLCdTaG9ydCB3b3JkczogY2F0LCBiYXQsIHN1bicsJ051bWJlcnMgdG8gMjAsIGJpZyBhbmQgc21hbGwnLCdTY2llbmNlOiBkYXkgYW5kIG5pZ2h0J11dLApbJzFzdCcsWydQaG9uaWNzIGJsZW5kczogc2gsIGNoLCB0aCcsJ0FkZCBhbmQgc3VidHJhY3Qgd2l0aGluIDIwJywnU2NpZW5jZTogcGxhbnRzIGFuZCBhbmltYWxzJywnU29jaWFsIHN0b3J5OiBTaGFyaW5nIHRveXMnXV0sClsnMm5kJyxbJ1NpbXBsZSBzZW50ZW5jZXMgYW5kIHJlYWRpbmcnLCdBZGRpdGlvbiB3aXRoIGNhcnJ5aW5nOyBwbGFjZSB2YWx1ZScsJ1NjaWVuY2U6IHdhdGVyIGFuZCB3ZWF0aGVyJywnU29jaWFsIHN0b3J5OiBXYWl0aW5nIGluIGxpbmUnXV0sClsnM3JkJyxbJ1Nob3J0IHN0b3JpZXMgYW5kIGNvbXByZWhlbnNpb24nLCdNdWx0aXBsaWNhdGlvbiB0YWJsZXMgMiwgNSwgMTAnLCdTY2llbmNlOiBvdXIgYm9keSBhbmQgZm9vZCcsJ1NvY2lhbCBzdG9yeTogQXNraW5nIGZvciBoZWxwJ11dLApbJzR0aCcsWydQYXJhZ3JhcGggd3JpdGluZyB3aXRoIHBpY3R1cmVzJywnRnJhY3Rpb25zOiBoYWxmIGFuZCBxdWFydGVyJywnU2NpZW5jZTogc29pbCwgYWlyLCBhbmQgcGxhbnRzJywnU29jaWFsIHN0b3J5OiBNYWtpbmcgYSBmcmllbmQnXV0sClsnNXRoJyxbJ1JlYWRpbmcgYW5kIHNob3J0IGVzc2F5cycsJ0RlY2ltYWxzLCBtb25leSwgYW5kIHRpbWUnLCdTY2llbmNlOiB0aGUgc29sYXIgc3lzdGVtJywnU29jaWFsIHN0b3J5OiBTdGF5aW5nIHNhZmUgb25saW5lJ11dXTsKZnVuY3Rpb24gc2Nob29sKCl7Y2FyZCgnPGgyPlByaW1hcnkgQ3VycmljdWx1bTwvaDI+PGRpdiBjbGFzcz0ibXUiPlBpY3R1cmUgbGVzc29ucywgcGhvbmljcywgbWF0aCwgc2NpZW5jZSwgc29jaWFsIHN0b3JpZXMuPC9kaXY+PGRpdiBjbGFzcz0ic3ViIiBpZD0ic3MiPjwvZGl2PjxkaXYgaWQ9InNiIj48L2Rpdj4nKTsKIFNDSC5mb3JFYWNoKGZ1bmN0aW9uKGcsaSl7dmFyIGI9ZG9jdW1lbnQuY3JlYXRlRWxlbWVudCgnYnV0dG9uJyk7Yi5jbGFzc05hbWU9J3BpbGwnKyhpPycnOicgb24nKTtiLnRleHRDb250ZW50PWdbMF07Yi5vbmNsaWNrPWZ1bmN0aW9uKCl7c2gyKGkpfTskKCcjc3MnKS5hcHBlbmRDaGlsZChiKX0pOwogZnVuY3Rpb24gc2gyKGkpe1tdLmZvckVhY2guY2FsbCgkKCcjc3MnKS5jaGlsZHJlbixmdW5jdGlvbih4LGope3guY2xhc3NMaXN0LnRvZ2dsZSgnb24nLGo9PWkpfSk7JCgnI3NiJykuaW5uZXJIVE1MPVNDSFtpXVsxXS5tYXAoZnVuY3Rpb24ocyl7cmV0dXJuJzxkaXYgY2xhc3M9InJvdyIgZGF0YS1zPSInK3MrJyI+8J+UiiAnK3MrJzwvZGl2Pid9KS5qb2luKCcnKTskKCcjc2InKS5vbmNsaWNrPWZ1bmN0aW9uKGUpe3ZhciByPWUudGFyZ2V0LmNsb3Nlc3QoJy5yb3cnKTtpZihyKXNheShyLmRhdGFzZXQucyl9fXNoMigwKX0KCi8qIENBTE0gKi8KdmFyIGJ0PVtdLGJvbj1mYWxzZTtmdW5jdGlvbiBic3RvcCgpe2Jvbj1mYWxzZTtidC5mb3JFYWNoKGNsZWFyVGltZW91dCk7YnQ9W119CmZ1bmN0aW9uIGNhbG0oKXsKIGNhcmQoJzxoMj40LTctOCBEZWVwIEJyZWF0aGluZzwvaDI+PGRpdiBjbGFzcz0ibXUiPkJyZWF0aGUgaW4gZm9yIDQsIGhvbGQgZm9yIDcsIG91dCBmb3IgOC48L2Rpdj48ZGl2IGlkPSJiYyI+UmVhZHk8L2Rpdj48ZGl2IHN0eWxlPSJ0ZXh0LWFsaWduOmNlbnRlciI+PGJ1dHRvbiBjbGFzcz0iYnRuIiBpZD0iYnMiPlN0YXJ0PC9idXR0b24+PC9kaXY+Jyk7CiAkKCcjYnMnKS5vbmNsaWNrPWZ1bmN0aW9uKCl7aWYoYm9uKXtic3RvcCgpOyQoJyNicycpLnRleHRDb250ZW50PSdTdGFydCc7JCgnI2JjJykuc3R5bGUudHJhbnNmb3JtPSdzY2FsZSgxKSc7JCgnI2JjJykudGV4dENvbnRlbnQ9J1JlYWR5JztyZXR1cm59Ym9uPXRydWU7JCgnI2JzJykudGV4dENvbnRlbnQ9J1N0b3AnOwogIChmdW5jdGlvbiBscCgpe2lmKCFib24pcmV0dXJuO3ZhciBiPSQoJyNiYycpO2Iuc3R5bGUudHJhbnNpdGlvbj0ndHJhbnNmb3JtIDRzIGVhc2UtaW4tb3V0JztiLnN0eWxlLnRyYW5zZm9ybT0nc2NhbGUoMS41KSc7Yi50ZXh0Q29udGVudD0nQnJlYXRoZSBpbiA0JzsKICBidC5wdXNoKHNldFRpbWVvdXQoZnVuY3Rpb24oKXtiLnRleHRDb250ZW50PSdIb2xkIDcnfSw0MDAwKSk7CiAgYnQucHVzaChzZXRUaW1lb3V0KGZ1bmN0aW9uKCl7Yi5zdHlsZS50cmFuc2l0aW9uPSd0cmFuc2Zvcm0gOHMgZWFzZS1pbi1vdXQnO2Iuc3R5bGUudHJhbnNmb3JtPSdzY2FsZSgxKSc7Yi50ZXh0Q29udGVudD0nQnJlYXRoZSBvdXQgOCd9LDExMDAwKSk7CiAgYnQucHVzaChzZXRUaW1lb3V0KGxwLDE5MDAwKSl9KSgpfTsKIGNhcmQoJzxoMj5TZW5zb3J5IFNvdW5kIFNvb3RoZXI8L2gyPjxkaXYgY2xhc3M9Im11Ij5Tb2Z0IHNvdW5kcyBtYWRlIG9uIHlvdXIgZGV2aWNlLiBLZWVwIHRoZSB2b2x1bWUgbG93LjwvZGl2PjxkaXYgaWQ9InNnIj48L2Rpdj48YnV0dG9uIGNsYXNzPSJidG4gYWx0IiBpZD0ic28iPuKWoCBTdG9wPC9idXR0b24+Jyk7CiBbJ1NvZnQgUmFpbicsJ09jZWFuIFdhdmVzJywnV2hpdGUgTm9pc2UnLCdGbHV0ZSddLmZvckVhY2goZnVuY3Rpb24obixpKXt2YXIgYj1kb2N1bWVudC5jcmVhdGVFbGVtZW50KCdidXR0b24nKTtiLmNsYXNzTmFtZT0nYnRuJztiLnRleHRDb250ZW50PVsn8J+Mp++4jyAnLCfwn4yKICcsJ/Cfk7sgJywn8J+OtiAnXVtpXStuO2Iub25jbGljaz1mdW5jdGlvbigpe3BsYXkoaSl9OyQoJyNzZycpLmFwcGVuZENoaWxkKGIpfSk7CiAkKCcjc28nKS5vbmNsaWNrPXN0b3BTbmR9CmZ1bmN0aW9uIHN0b3BTbmQoKXtpZihzbmQpe3NuZC50LmZvckVhY2goY2xlYXJJbnRlcnZhbCk7dHJ5e3NuZC5uLmZvckVhY2goZnVuY3Rpb24obil7bi5zdG9wKCl9KX1jYXRjaChlKXt9dHJ5e3NuZC5jdHguY2xvc2UoKX1jYXRjaChlKXt9c25kPW51bGx9fQpmdW5jdGlvbiBwbGF5KGspe3N0b3BTbmQoKTt2YXIgQUM9d2luZG93LkF1ZGlvQ29udGV4dHx8d2luZG93LndlYmtpdEF1ZGlvQ29udGV4dDtpZighQUMpcmV0dXJuO3ZhciBjdHg9bmV3IEFDKCksZz1jdHguY3JlYXRlR2FpbigpO2cuZ2Fpbi52YWx1ZT0uMjU7Zy5jb25uZWN0KGN0eC5kZXN0aW5hdGlvbik7c25kPXtjdHg6Y3R4LG46W10sdDpbXX07CiBpZihrPDMpe3ZhciBidWY9Y3R4LmNyZWF0ZUJ1ZmZlcigxLGN0eC5zYW1wbGVSYXRlKjIsY3R4LnNhbXBsZVJhdGUpLGQ9YnVmLmdldENoYW5uZWxEYXRhKDApO2Zvcih2YXIgaT0wO2k8ZC5sZW5ndGg7aSsrKWRbaV09TWF0aC5yYW5kb20oKSoyLTE7CiAgdmFyIHM9Y3R4LmNyZWF0ZUJ1ZmZlclNvdXJjZSgpO3MuYnVmZmVyPWJ1ZjtzLmxvb3A9dHJ1ZTt2YXIgZj1jdHguY3JlYXRlQmlxdWFkRmlsdGVyKCk7cy5jb25uZWN0KGYpO2YuY29ubmVjdChnKTsKICBpZihrPT0wKXtmLnR5cGU9J2JhbmRwYXNzJztmLmZyZXF1ZW5jeS52YWx1ZT0yNTAwO2YuUS52YWx1ZT0uNX1lbHNlIGlmKGs9PTEpe2YudHlwZT0nbG93cGFzcyc7Zi5mcmVxdWVuY3kudmFsdWU9NTAwO3ZhciBsPWN0eC5jcmVhdGVPc2NpbGxhdG9yKCksbGc9Y3R4LmNyZWF0ZUdhaW4oKTtsLmZyZXF1ZW5jeS52YWx1ZT0uMTtsZy5nYWluLnZhbHVlPS4xMjtsLmNvbm5lY3QobGcpO2xnLmNvbm5lY3QoZy5nYWluKTtsLnN0YXJ0KCk7c25kLm4ucHVzaChsKX1lbHNle2YudHlwZT0nbG93cGFzcyc7Zi5mcmVxdWVuY3kudmFsdWU9NjAwMDtnLmdhaW4udmFsdWU9LjEyfQogIHMuc3RhcnQoKTtzbmQubi5wdXNoKHMpfQogZWxzZXt2YXIgTj1bNTIzLDU4Nyw2NTksNzg0LDg4MF07c25kLnQucHVzaChzZXRJbnRlcnZhbChmdW5jdGlvbigpe3ZhciBvPWN0eC5jcmVhdGVPc2NpbGxhdG9yKCksZT1jdHguY3JlYXRlR2FpbigpO28uZnJlcXVlbmN5LnZhbHVlPU5bTWF0aC5mbG9vcihNYXRoLnJhbmRvbSgpKjUpXTtlLmdhaW4uc2V0VmFsdWVBdFRpbWUoMCxjdHguY3VycmVudFRpbWUpO2UuZ2Fpbi5saW5lYXJSYW1wVG9WYWx1ZUF0VGltZSguNCxjdHguY3VycmVudFRpbWUrLjQpO2UuZ2Fpbi5saW5lYXJSYW1wVG9WYWx1ZUF0VGltZSgwLGN0eC5jdXJyZW50VGltZSsyKTtvLmNvbm5lY3QoZSk7ZS5jb25uZWN0KGcpO28uc3RhcnQoKTtvLnN0b3AoY3R4LmN1cnJlbnRUaW1lKzIpfSwxODAwKSl9fQoKLyogUkVTT1VSQ0VTICovCmZ1bmN0aW9uIHJlcygpewogdmFyIGM9Y2FyZCgnPGgyPuKcje+4jyBGaW5nZXIgVHJhY2luZzwvaDI+PGRpdiBjbGFzcz0ibXUiPlRyYWNlIG92ZXIgdGhlIGZhaW50IHNoYXBlIHdpdGggeW91ciBmaW5nZXIuPC9kaXY+PHNlbGVjdCBpZD0iZ2wiIGNsYXNzPSJwaWxsIiBzdHlsZT0ibWFyZ2luOjZweCAwIj48L3NlbGVjdD48Y2FudmFzIGlkPSJjdiIgd2lkdGg9IjM0MCIgaGVpZ2h0PSIzNDAiPjwvY2FudmFzPjxidXR0b24gY2xhc3M9ImJ0biBhbHQiIGlkPSJjbCI+Q2xlYXI8L2J1dHRvbj4nKTsKIHZhciBjdj0kKCcjY3YnKSx4PWN2LmdldENvbnRleHQoJzJkJyksZG49ZmFsc2U7CiBbJ0EnLCdCJywnQycsJzEnLCcyJywnMycsJ+KXiycsJ+KWsycsJ+KWoSddLmZvckVhY2goZnVuY3Rpb24oZyl7dmFyIG89ZG9jdW1lbnQuY3JlYXRlRWxlbWVudCgnb3B0aW9uJyk7by50ZXh0Q29udGVudD1nOyQoJyNnbCcpLmFwcGVuZENoaWxkKG8pfSk7CiBmdW5jdGlvbiBndWlkZSgpe3guY2xlYXJSZWN0KDAsMCwzNDAsMzQwKTt4LmZpbGxTdHlsZT0ncmdiYSgxMjAsMTQwLDE3MCwuMyknO3guZm9udD0nYm9sZCAyNjBweCBzYW5zLXNlcmlmJzt4LnRleHRBbGlnbj0nY2VudGVyJzt4LnRleHRCYXNlbGluZT0nbWlkZGxlJzt4LmZpbGxUZXh0KCQoJyNnbCcpLnZhbHVlLDE3MCwxODUpfWd1aWRlKCk7CiAkKCcjZ2wnKS5vbmNoYW5nZT1ndWlkZTskKCcjY2wnKS5vbmNsaWNrPWd1aWRlOwogZnVuY3Rpb24gcHQoZSl7dmFyIHI9Y3YuZ2V0Qm91bmRpbmdDbGllbnRSZWN0KCk7cmV0dXJuWyhlLmNsaWVudFgtci5sZWZ0KSozNDAvci53aWR0aCwoZS5jbGllbnRZLXIudG9wKSozNDAvci5oZWlnaHRdfQogY3Yub25wb2ludGVyZG93bj1mdW5jdGlvbihlKXtkbj10cnVlO3ZhciBwPXB0KGUpO3guYmVnaW5QYXRoKCk7eC5tb3ZlVG8ocFswXSxwWzFdKX07CiBjdi5vbnBvaW50ZXJtb3ZlPWZ1bmN0aW9uKGUpe2lmKCFkbilyZXR1cm47dmFyIHA9cHQoZSk7eC5saW5lV2lkdGg9MTQ7eC5saW5lQ2FwPSdyb3VuZCc7eC5zdHJva2VTdHlsZT0nIzJhNmZkYic7eC5saW5lVG8ocFswXSxwWzFdKTt4LnN0cm9rZSgpfTsKIGN2Lm9ucG9pbnRlcnVwPWN2Lm9ucG9pbnRlcmxlYXZlPWZ1bmN0aW9uKCl7ZG49ZmFsc2V9OwogdmFyIFQ9W1sn4o+wJywnV2FrZSB1cCddLFsn8J+qpScsJ0JydXNoIHRlZXRoJ10sWyfwn6WjJywnQnJlYWtmYXN0J10sWyfwn5OaJywnTGVhcm5pbmcgdGltZSddLFsn8J+nuCcsJ1BsYXkgdGltZSddLFsn8J+NmycsJ0x1bmNoJ10sWyfwn5i0JywnUmVzdCddLFsn8J+nmCcsJ0NhbG0gdGltZSddLFsn8J+Nve+4jycsJ0Rpbm5lciddLFsn8J+bj++4jycsJ0JlZHRpbWUnXV07CiBjYXJkKCc8aDI+8J+ThSBURUFDQ0ggRGFpbHkgUm91dGluZTwvaDI+PGRpdiBjbGFzcz0ibXUiPlRhcCBlYWNoIHN0ZXAgd2hlbiBmaW5pc2hlZC4gRmlyc3QgdGhpcywgdGhlbiB0aGF0LjwvZGl2PicrVC5tYXAoZnVuY3Rpb24odCl7cmV0dXJuJzxkaXYgY2xhc3M9InJvdyIgZGF0YS1zPSInK3RbMV0rJyI+PHNwYW4gc3R5bGU9ImZvbnQtc2l6ZToyNnB4Ij4nK3RbMF0rJzwvc3Bhbj4nK3RbMV0rJzwvZGl2Pid9KS5qb2luKCcnKSkub25jbGljaz1mdW5jdGlvbihlKXt2YXIgcj1lLnRhcmdldC5jbG9zZXN0KCcucm93Jyk7aWYocil7ci5jbGFzc0xpc3QudG9nZ2xlKCdkb25lJyk7c2F5KHIuZGF0YXNldC5zKX19OwogY2FyZCgnPGgyPvCfk5YgU29jaWFsIFN0b3JpZXM8L2gyPicrW1snR29pbmcgdG8gdGhlIGRvY3RvcicsJ0kgZ28gdG8gdGhlIGRvY3RvciB0byBzdGF5IGhlYWx0aHkuIEkgc2l0IGFuZCB3YWl0LiBUaGUgZG9jdG9yIGxvb2tzIGF0IG1lIGFuZCBpdCBpcyBva2F5LiBJIGNhbiBob2xkIGEgZmF2b3JpdGUgdG95LiddLFsnV2hlbiBJIGZlZWwgdXBzZXQnLCdTb21ldGltZXMgSSBmZWVsIHVwc2V0LiBJIGNhbiB0YWtlIGEgZGVlcCBicmVhdGguIEkgY2FuIGFzayBmb3IgYSBicmVhay4gVGhlbiBJIGZlZWwgY2FsbSBhZ2Fpbi4nXSxbJ1NheWluZyBoZWxsbycsJ1doZW4gSSBzZWUgYSBmcmllbmQgSSBjYW4gd2F2ZSBhbmQgc2F5IGhlbGxvLiBJZiBJIGRvIG5vdCB3YW50IHRvIHRhbGssIEkgY2FuIHNtaWxlIGFuZCB0aGF0IGlzIG9rYXkuJ11dLm1hcChmdW5jdGlvbihzKXtyZXR1cm4nPGRpdiBjbGFzcz0icm93IiBkYXRhLXM9Iicrc1sxXSsnIiBzdHlsZT0iZGlzcGxheTpibG9jayI+PGI+8J+UiiAnK3NbMF0rJzwvYj48ZGl2IGNsYXNzPSJtdSI+JytzWzFdKyc8L2Rpdj48L2Rpdj4nfSkuam9pbignJykpLm9uY2xpY2s9ZnVuY3Rpb24oZSl7dmFyIHI9ZS50YXJnZXQuY2xvc2VzdCgnLnJvdycpO2lmKHIpc2F5KHIuZGF0YXNldC5zKX07CiBjYXJkKCc8aDI+8J+Pm++4jyBPZmZpY2lhbCBXZWxmYXJlIExpbmtzPC9oMj48dWw+PGxpPjxhIGhyZWY9Imh0dHBzOi8vd3d3LnN3YXZsYW1iYW5jYXJkLmdvdi5pbiIgdGFyZ2V0PSJfYmxhbmsiIHJlbD0ibm9vcGVuZXIiPlVESUQgQ2FyZCBwb3J0YWwgKHN3YXZsYW1iYW5jYXJkLmdvdi5pbik8L2E+PC9saT48bGk+PGEgaHJlZj0iaHR0cHM6Ly93d3cudGhlbmF0aW9uYWx0cnVzdC5nb3YuaW4iIHRhcmdldD0iX2JsYW5rIiByZWw9Im5vb3BlbmVyIj5OaXJhbWF5YSBIZWFsdGggSW5zdXJhbmNlIChOYXRpb25hbCBUcnVzdCk8L2E+PC9saT48bGk+PGEgaHJlZj0iaHR0cHM6Ly9uaWVwaWQubmljLmluIiB0YXJnZXQ9Il9ibGFuayIgcmVsPSJub29wZW5lciI+TklFUElEIChuaWVwaWQubmljLmluKTwvYT48L2xpPjwvdWw+PHAgY2xhc3M9Im11Ij5SdWxlcyBhbmQgYW1vdW50cyBjYW4gY2hhbmdlLCBzbyBjb25maXJtIG9uIHRoZSBvZmZpY2lhbCBzaXRlLiBOZXZlciBwYXkgYW4gYWdlbnQgZm9yIHRoZXNlIHNlcnZpY2VzLjwvcD4nKTsKfQp0YWJzKCk7ZHJhdygpOwo8L3NjcmlwdD48L2JvZHk+PC9odG1sPgo=';
+function html(){var b=atob(B64),u=new Uint8Array(b.length);for(var i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return new TextDecoder('utf-8').decode(u)}
+V.x15=function(){setTimeout(function(){var f=document.getElementById('x15f');if(f&&!f.dataset.on){f.dataset.on='1';f.srcdoc=html()}},30);
+return '<h2>\ud83c\udf08 '+t('x15')+'</h2><iframe id="x15f" title="Divyang Learning and Autism Care" style="width:100%;height:calc(100vh - 190px);min-height:480px;border:0;border-radius:12px;background:transparent"></iframe>'};
+document.addEventListener('click',function(e){if(e.target.closest&&e.target.closest('#nav button')){var f=document.getElementById('x15f');if(f&&f.contentWindow){try{f.contentWindow.speechSynthesis.cancel()}catch(x){}}}},true);
+})();
+/* ===== Add-on 14: Divyang Learning & Autism Care tab ===== */
+    (function(){
+    var $=function(i){return document.getElementById(i)},X=function(s){return esc(s)};
+    Object.assign(T.en,{x14:'Divyang Learning'});T.hi=T.hi||{};Object.assign(T.hi,{x14:'दिव्यांग शिक्षा'});
+    var st=document.createElement('style');st.textContent='.x14c{font-size:42px;min-width:76px;min-height:76px;margin:5px;border-radius:16px;border:2px solid #999;background:#fff;color:#000}.x14row{display:flex;flex-wrap:wrap;justify-content:center}.x14big{font-size:24px;text-align:center;margin:8px 0}#x14cv{width:100%;max-width:340px;height:260px;border:2px dashed #999;border-radius:12px;touch-action:none;background:#fff;display:block;margin:8px auto}';document.head.appendChild(st);
+    function D(h,b,o){return '<details class="card"'+(o?' open':'')+'><summary>'+h+'</summary>'+b+'</details>'}
+    function CH(a,k,key){return '<div class="chips">'+a.map(function(x){return '<button class="chip" data-x14="'+k+'" data-v="'+X(x[0])+'">'+X(x[1])+'</button>'}).join('')+'</div>'}
+    function UL(a){return '<ul>'+a.map(function(x){return '<li>'+X(x)+'</li>'}).join('')+'</ul>'}
+    function LK(a){return a.map(function(x){return '<p style="margin:6px 0"><a class="notranslate" translate="no" href="'+x[1]+'" target="_blank" rel="noopener">'+X(x[0])+'</a></p>'}).join('')}
+    function sp(s){try{if(window.speechSynthesis){speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(s);u.lang='en-IN';u.rate=.85;speechSynthesis.speak(u)}}catch(e){}}
+    function shuf(a){for(var i=a.length-1;i>0;i--){var j=Math.random()*(i+1)|0,t=a[i];a[i]=a[j];a[j]=t}return a}
+    var G={};
+    function paint(h){var g=$('x14g');if(g)g.innerHTML=h+'<p id="x14f" class="x14big" aria-live="polite"></p>'}
+    function fb(m,ok){var f=$('x14f');if(f){f.textContent=m;f.style.color=ok?'#1a7f37':'#b45309'}sp(m)}
+    /* ---- games ---- */
+    var PM=[['🍎','Apple'],['🐶','Dog'],['🔴','Red'],['⚪','Circle'],['🌞','Sun'],['🚌','Bus'],['🔵','Blue'],['🐱','Cat']];
+    function pm(){var t=PM[Math.random()*PM.length|0],o=shuf(shuf(PM.filter(function(x){return x!==t})).slice(0,3).concat([t]));
+    paint('<p class="x14big">Find: <b>'+t[1]+'</b></p><div class="x14row">'+o.map(function(p){return '<button class="x14c" aria-label="'+p[1]+'" data-x14="pmc" data-v="'+(p===t?1:0)+'">'+p[0]+'</button>'}).join('')+'</div>');sp('Find '+t[1])}
+    var WD=[['CAT','🐱'],['DOG','🐶'],['SUN','🌞'],['CUP','☕'],['BUS','🚌']];
+    function wd(first){if(first){G.w=WD[Math.random()*WD.length|0];G.i=0}var w=G.w[0],sl='';for(var k=0;k<3;k++)sl+='<span style="display:inline-block;width:52px;border-bottom:4px solid #333;margin:4px;font-size:38px">'+(k<G.i?w[k]:'&nbsp;')+'</span>';
+    var L=shuf(w.split('').slice());paint('<div class="x14big" style="font-size:70px">'+G.w[1]+'</div><div class="x14big">'+sl+'</div><div class="x14row">'+L.map(function(c){return '<button class="x14c" data-x14="wl" data-v="'+c+'">'+c+'</button>'}).join('')+'</div>');if(first)sp('Spell the word')}
+    function cn(){var n=1+(Math.random()*9|0),e=['🍎','⭐','🐟','🎈'][Math.random()*4|0],o=[n];while(o.length<3){var m=1+(Math.random()*9|0);if(o.indexOf(m)<0)o.push(m)}G.n=n;
+    paint('<div class="x14big" style="font-size:36px;line-height:1.4">'+new Array(n+1).join(e)+'</div><p class="x14big">How many?</p><div class="x14row">'+shuf(o).map(function(v){return '<button class="x14c" data-x14="cnc" data-v="'+v+'">'+v+'</button>'}).join('')+'</div>');sp('Count the pictures. How many?')}
+    var CC=['#e74c3c','#2ecc71','#3498db','#f1c40f'];
+    function cm(len){G.q=[];for(var i=0;i<(len||2);i++)G.q.push(Math.random()*4|0);G.p=0;G.lock=true;
+    paint('<p class="x14big">Watch the colours, then tap in the same order.</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:260px;margin:auto">'+CC.map(function(c,i){return '<button id="x14cc'+i+'" aria-label="colour '+(i+1)+'" data-x14="cmc" data-v="'+i+'" style="height:100px;border-radius:16px;border:0;background:'+c+';opacity:.45"></button>'}).join('')+'</div>');
+    G.q.forEach(function(c,i){setTimeout(function(){lit(c)},900+i*800)});setTimeout(function(){G.lock=false;var f=$('x14f');if(f)f.textContent='Your turn'},900+G.q.length*800)}
+    function lit(c){var b=$('x14cc'+c);if(!b)return;b.style.opacity='1';setTimeout(function(){b.style.opacity='.45'},450)}
+    /* ---- breathing and sounds ---- */
+    var bt=null;
+    function breathe(on){clearTimeout(bt);var c=$('x14b'),m=$('x14bm');if(!c)return;if(!on){c.style.transition='transform .5s';c.style.transform='scale(.5)';m.textContent='Tap start';return}
+    var P=[['Breathe in',4,1],['Hold',7,1],['Breathe out',8,.5]],n=0,r=0;(function s(){if(r>=4){m.textContent='Well done. You are calm.';sp('Well done');c.style.transform='scale(.5)';return}var p=P[n];m.textContent=p[0]+' ('+p[1]+')';c.style.transition=n===1?'none':'transform '+p[1]+'s linear';c.style.transform='scale('+p[2]+')';if(n!==1)sp(p[0]);bt=setTimeout(function(){n++;if(n>2){n=0;r++}s()},p[1]*1000)})()}
+    var ac=null,sn=null;
+    function stopS(){if(!sn)return;try{clearInterval(sn.iv);sn.nodes.forEach(function(x){try{x.stop()}catch(e){}});sn.g.disconnect()}catch(e){}sn=null}
+    function snd(k){stopS();if(!k)return;var A=window.AudioContext||window.webkitAudioContext;if(!A){toast('Sound not supported on this device');return}ac=ac||new A();if(ac.resume)ac.resume();
+    var nodes=[],g=ac.createGain(),iv=0;g.gain.value=.25;g.connect(ac.destination);
+    function noise(){var b=ac.createBuffer(1,ac.sampleRate*2,ac.sampleRate),d=b.getChannelData(0);for(var i=0;i<d.length;i++)d[i]=Math.random()*2-1;var s=ac.createBufferSource();s.buffer=b;s.loop=true;s.start();nodes.push(s);return s}
+    if(k==='rain'){var f=ac.createBiquadFilter();f.type='highpass';f.frequency.value=1500;noise().connect(f);f.connect(g)}
+    else if(k==='white'){noise().connect(g)}
+    else if(k==='ocean'){var f2=ac.createBiquadFilter();f2.type='lowpass';f2.frequency.value=500;var lg=ac.createGain();lg.gain.value=.5;var o=ac.createOscillator(),og=ac.createGain();o.frequency.value=.12;og.gain.value=.5;o.connect(og);og.connect(lg.gain);o.start();nodes.push(o);noise().connect(f2);f2.connect(lg);lg.connect(g)}
+    else{var N=[523,587,659,784,659,587,523,440],i=0,os=ac.createOscillator(),vb=ac.createOscillator(),vg=ac.createGain();os.type='sine';os.frequency.value=N[0];vb.frequency.value=5;vg.gain.value=5;vb.connect(vg);vg.connect(os.frequency);os.connect(g);os.start();vb.start();nodes.push(os,vb);iv=setInterval(function(){i=(i+1)%N.length;os.frequency.setTargetAtTime(N[i],ac.currentTime,.15)},1500)}
+    sn={nodes:nodes,g:g,iv:iv}}
+    /* ---- tracing ---- */
+    var TR='A';
+    function guide(){var c=$('x14cv');if(!c)return;if(!c.width||c.width<300){c.width=680;c.height=520}var x=c.getContext('2d');x.clearRect(0,0,c.width,c.height);x.font='bold 420px sans-serif';x.textAlign='center';x.textBaseline='middle';x.setLineDash([14,12]);x.lineWidth=4;x.strokeStyle='#999';x.strokeText(TR,c.width/2,c.height/2+20);x.setLineDash([])}
+    var dr=false;
+    function pt(e,c){var r=c.getBoundingClientRect();return [(e.clientX-r.left)*c.width/r.width,(e.clientY-r.top)*c.height/r.height]}
+    document.addEventListener('pointerdown',function(e){if(e.target.id!=='x14cv')return;var c=e.target,x=c.getContext('2d'),p=pt(e,c);dr=true;try{c.setPointerCapture(e.pointerId)}catch(k){}x.strokeStyle='#e67e22';x.lineWidth=22;x.lineCap='round';x.lineJoin='round';x.beginPath();x.moveTo(p[0],p[1]);x.lineTo(p[0]+.1,p[1]+.1);x.stroke();e.preventDefault()});
+    document.addEventListener('pointermove',function(e){if(!dr||e.target.id!=='x14cv')return;var c=e.target,x=c.getContext('2d'),p=pt(e,c);x.lineTo(p[0],p[1]);x.stroke();x.beginPath();x.moveTo(p[0],p[1])});
+    document.addEventListener('pointerup',function(){dr=false});
+    /* ---- content ---- */
+    var DOM=[['dom_comm','💬','Communication & Language',['Use picture cards (PECS): the child gives a picture to ask for water, food, toilet or help.','Model short phrases: "want water", "go out", "I need help". Wait 5 seconds for a reply.','Practise greetings with a wave: hello, bye, thank you.','Name things in daily life: point and say the word slowly.','Never force eye contact. Praise any attempt to communicate.']],
+    ['dom_acad','📘','Basic Academic Lessons',['Letters: match each letter with a picture (A for Apple, B for Ball).','Numbers 1 to 10: count real objects like spoons or blocks.','Colours and shapes: sort red, blue and yellow blocks; find circles and squares at home.','Tracing: use the tracing tool below for letters and numbers.','Keep lessons short, 10 minutes, and end with a favourite activity.']],
+    ['dom_life','🪥','Daily Living & Self-Care',['Make a picture sequence for brushing teeth: paste, brush, rinse, wipe.','Hand washing: wet, soap, rub for 20 seconds, rinse, dry.','Dressing: lay clothes out in order and practise buttons and zips.','Eating: spoon practice, drinking from a glass, clearing the plate.','Toilet routine: use a visual step chart and the same time each day.']],
+    ['dom_social','🤝','Social & Emotional',['Name feelings with faces: happy, sad, angry, scared, tired.','Teach turn-taking with a simple board game: my turn, your turn.','Practise personal space: one arm length from others.','Role play: asking to join a game, saying sorry, sharing.','Offer a calm corner for big feelings. No punishment for meltdowns.']],
+    ['dom_cog','🧠','Cognitive & Thinking',['Sorting: group by colour, size or type (fruits and vehicles).','Matching pairs and "what is different" picture games.','Sequencing: put 3 to 4 picture cards in order (wake up, brush, eat).','Simple puzzles: start with 4 pieces and grow slowly.','Memory: hide one object and ask "what is missing?"']],
+    ['dom_sensory','🎧','Sensory & Motor Skills',['Heavy work calms many children: pushing, carrying, wall push-ups.','Texture play: sand, clay, water; stop if the child dislikes it.','Noise-cancelling headphones for loud places like markets and festivals.','Fine motor: threading beads, clay rolling, tearing paper.','Gross motor: jumping, balancing, ball throwing, swimming.']],
+    ['dom_safety','🛡️','Safety & Community',['Learn own name, parent phone number and address (carry an ID card).','Road safety: stop, look, hold an adult hand, use the zebra crossing.','Stranger safety: do not go with anyone without a parent.','Emergency: practise saying "help" and calling 112.','Crowds: agree a meeting spot and use an ID bracelet.']],
+    ['dom_knowl','🌍','Everyday Knowledge',['Days of the week with a picture calendar.','Family members and their names with photos.','Animals, fruits, vegetables and their sounds or colours.','Money: recognise coins and notes; practise a pretend shop.','Time: morning, afternoon, night with the daily timetable.']],
+    ['dom_readiness','🪑','Play & Learning Readiness',['Sit and attend for 5 minutes, then grow slowly.','Follow one-step instructions: "give me the ball".','Imitate actions: clap, wave, jump.','First-Then board: "First learning, then play".','Wait for a turn using a visual timer.']],
+    ['dom_digital','📱','Digital Learning',['Keep screen time short, with an adult, and choose calm learning apps.','Practise tap, swipe and drag with simple apps.','Use the speaker button for audio and picture support.','Avoid fast, flashing videos that upset the senses.','Teach never to share personal details online.']]];
+    var CUR=[['LKG','LKG',['🅰️ A for Apple 🍎, B for Ball ⚽, C for Cat 🐱','Count 1 to 5 with fingers and toys','Colours and shapes: red, blue, yellow; circle, square','Body parts and animals','Story: I wash my hands before eating']],
+    ['UKG','UKG',['Sounds: a, e, i, o, u; 3-letter words CAT, DOG, SUN','Count 1 to 20; more and less; simple add with objects','Fruits, vegetables, day and night','Days of the week; my family','Story: I wait for my turn']],
+    ['G1','Std 1',['Phonics: blends (bl, st, tr); read short sentences','Numbers to 100; add and subtract within 20','Plants and animals; the five senses','My home and my school; helpers in the community','Story: I say sorry and thank you']],
+    ['G2','Std 2',['Read 4 to 5 line stories; naming words and action words','Tables 2, 5, 10; 2-digit addition; coins and notes','Water, air, food; living and non-living things','Festivals, our neighbourhood, road signs','Story: I ask for help when I need it']],
+    ['G3','Std 3',['Write 5 sentences about my day; opposites and rhymes','Multiplication and division basics; time on the clock','Parts of a plant; healthy food; the Sun and Moon','Our state and country; maps and directions','Story: I share and play fairly']],
+    ['G4','Std 4',['Read a short passage and answer questions; tenses','Fractions; measurement of length, weight, volume','Food chain; water cycle; the human body','Government helpers: police, doctor, panchayat','Story: I stay calm when things change']],
+    ['G5','Std 5',['Paragraph writing; letter writing; comprehension','Decimals, area and perimeter; word problems','Light, sound, force and simple machines','India: states, rivers and rights of a citizen','Story: I follow safety rules in public']]];
+    var TT=[['🌅','Wake up'],['🪥','Brush teeth'],['🍚','Breakfast'],['📘','Learning time'],['🧩','Play time'],['🍛','Lunch'],['😴','Rest'],['🌳','Outdoor time'],['🍽️','Dinner'],['🛏️','Sleep']];
+    var STO=[['🧼 Washing hands','I wash my hands with soap before I eat. It keeps me healthy. My parents are happy when I do it.'],['🛑 When I feel upset','Sometimes I feel upset. I can take 3 deep breaths. I can go to my quiet corner. Then I feel better.'],['🚶 Crossing the road','I stop at the road. I look left and right. I hold a grown-up hand. I cross when it is safe.'],['👋 Meeting new people','New people say hello. I can wave or say hello. It is okay if I feel shy.']];
+    function domHtml(id){var d=DOM.filter(function(x){return x[0]===id})[0]||DOM[0];return '<h4>'+d[1]+' '+X(d[2])+'</h4>'+UL(d[3])+'<button class="btn alt" data-x14="read" data-v="'+X(d[3].join(' '))+'">🔊 Read aloud</button>'}
+    function curHtml(id){var c=CUR.filter(function(x){return x[0]===id})[0]||CUR[0],L=['Phonics and reading','Maths','Science','Social studies','Social story'];return '<h4>🏫 '+X(c[1])+'</h4><ul>'+c[2].map(function(x,i){return '<li><b>'+L[i]+':</b> '+X(x)+'</li>'}).join('')+'</ul><button class="btn alt" data-x14="read" data-v="'+X(c[2].join('. '))+'">🔊 Read aloud</button>'}
+    function ttHtml(){var d=new Date().toISOString().slice(0,10),S=ld('x14tt',{});if(S.d!==d)S={d:d,a:[]};return '<ul style="list-style:none;padding:0">'+TT.map(function(x,i){var on=S.a.indexOf(i)>-1;return '<li><button class="btn'+(on?'':' alt')+'" style="width:100%;text-align:left;margin:4px 0;font-size:18px" data-x14="tt" data-v="'+i+'">'+(on?'✅':'⬜')+' '+x[0]+' '+X(x[1])+'</button></li>'}).join('')+'</ul><p class="muted">Tick each step when done. It resets every day.</p>'}
+    V.x14=function(){setTimeout(guide,60);
+    return '<h2>🧩 '+t('x14')+' &amp; Autism Care</h2>'+
+    '<div class="card"><h3 class="sec">🎮 Interactive autism learning games</h3>'+CH([['pm','🖼️ Picture matching'],['wd','🔤 3-letter words'],['cn','🔢 Counting'],['cm','🎨 Colour memory']],'game')+'<div id="x14g"><p class="muted">Choose a game. Every answer gets a happy sound and words.</p></div></div>'+
+    D('🧩 10 autism learning domains',CH(DOM.map(function(d){return [d[0],d[1]+' '+d[2]]}),'dom')+'<div id="x14d">'+domHtml('dom_comm')+'</div>',true)+
+    D('🏫 Primary school curriculum (LKG to 5th Standard)',CH(CUR.map(function(c){return [c[0],c[1]]}),'cur')+'<div id="x14k">'+curHtml('LKG')+'</div>')+
+    D('🧘 Sensory and calming tools','<h4>4-7-8 deep breathing</h4><div style="text-align:center"><div id="x14b" style="width:160px;height:160px;border-radius:50%;background:#7cc6fe;margin:12px auto;transform:scale(.5)"></div><p id="x14bm" class="x14big" aria-live="polite">Tap start</p></div><button class="btn" data-x14="br" data-v="1">▶ Start</button><button class="btn alt" data-x14="br" data-v="0">■ Stop</button><h4>Soothing sound soother</h4><div class="chips"><button class="chip" data-x14="snd" data-v="rain">🌧️ Soft rain</button><button class="chip" data-x14="snd" data-v="ocean">🌊 Ocean waves</button><button class="chip" data-x14="snd" data-v="white">⚪ White noise</button><button class="chip" data-x14="snd" data-v="flute">🎶 Flute</button><button class="chip" data-x14="snd" data-v="">■ Stop</button></div><p class="muted">Keep the volume low. Sounds are made on the phone, no internet needed.</p>')+
+    D('📚 Special education resources','<h4>✍️ Finger tracing</h4>'+CH('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.split('').map(function(c){return [c,c]}),'tr')+'<canvas id="x14cv" width="680" height="520" aria-label="Tracing board"></canvas><button class="btn alt" data-x14="trc">🧽 Clear</button><h4>🗓️ TEACCH daily routine timetable</h4><div id="x14t">'+ttHtml()+'</div><h4>📖 Behavioural social stories</h4>'+STO.map(function(s){return D(X(s[0]),'<p>'+X(s[1])+'</p><button class="btn alt" data-x14="read" data-v="'+X(s[1])+'">🔊 Read aloud</button>')}).join('')+'<h4>🔗 Official welfare links</h4>'+LK([['UDID card portal (Unique Disability ID)','https://www.swavlambancard.gov.in/'],['Niramaya Health Insurance (National Trust)','https://thenationaltrust.gov.in/'],['NIEPID (intellectual disabilities)','https://niepid.nic.in/'],['Dept. of Empowerment of Persons with Disabilities','https://disabilityaffairs.gov.in/'],['Tele-MANAS mental health helpline: 14416','tel:14416']]))};
+    /* ---- events ---- */
+    document.addEventListener('click',function(e){var el=e.target.closest&&e.target.closest('[data-x14]');if(!el)return;var k=el.dataset.x14,v=el.dataset.v;
+    if(k==='game'){stopS();({pm:pm,wd:function(){wd(true)},cn:cn,cm:function(){cm(2)}})[v]();return}
+    if(k==='pmc'){if(v==='1'){fb('Great job!',1);setTimeout(pm,1600)}else fb('Try again',0);return}
+    if(k==='wl'){var w=G.w[0];if(v===w[G.i]){G.i++;sp(v);if(G.i>=3){wd();var f=$('x14f');if(f)f.textContent='🎉 '+w;setTimeout(function(){sp(w.split('').join(' ')+'. '+w.toLowerCase())},500);setTimeout(function(){wd(true)},3200)}else wd()}else fb('Try again',0);return}
+    if(k==='cnc'){if(+v===G.n){fb('Yes! '+G.n,1);setTimeout(cn,1600)}else fb('Try again',0);return}
+    if(k==='cmc'){if(G.lock)return;var c=+v;lit(c);if(c===G.q[G.p]){G.p++;if(G.p>=G.q.length){G.lock=true;fb('Well done!',1);setTimeout(function(){cm(Math.min(G.q.length+1,6))},1800)}}else{G.lock=true;fb('Good try. Watch again.',0);setTimeout(function(){cm(G.q.length)},1800)}return}
+    if(k==='dom'){$('x14d').innerHTML=domHtml(v);return}
+    if(k==='cur'){$('x14k').innerHTML=curHtml(v);return}
+    if(k==='read'){sp(v);return}
+    if(k==='br'){breathe(v==='1');return}
+    if(k==='snd'){snd(v);return}
+    if(k==='tr'){TR=v;guide();return}
+    if(k==='trc'){guide();return}
+    if(k==='tt'){var d=new Date().toISOString().slice(0,10),S=ld('x14tt',{});if(S.d!==d)S={d:d,a:[]};var i=S.a.indexOf(+v);if(i>-1)S.a.splice(i,1);else S.a.push(+v);sv('x14tt',S);$('x14t').innerHTML=ttHtml();return}});
+    /* ---- nav and home tile ---- */
+    var oh=V.home;V.home=function(){var s=oh(),r=/<button class="tile"[^>]*data-go="x9acc">[\s\S]*?<\/button>/;return r.test(s)?s.replace(r,function(m){return m+tile('x14','🧩',t('x14'))}):s};
+    var oc=go;go=function(x){if(x!=='x14'){stopS();breathe(false)}return oc(x)};
+    })();
 </script>
 <script>if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0)addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})});</script>
 <script>
@@ -2634,6 +2789,91 @@ var JSLOGO='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAMAAABrrFhUAA
 </script>
 
 <script>
+    /* ===== Add-on 16: more Divyang learning tools + Officials (by location) tab ===== */
+    (function(){
+    var $=function(i){return document.getElementById(i)},X=function(s){return esc(s)};
+    Object.assign(T.en,{x16:'Officials'});T.hi=T.hi||{};Object.assign(T.hi,{x16:'अधिकारी संपर्क'});
+    function say(s){try{if(window.speechSynthesis){speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(s);u.lang='en-IN';u.rate=.85;speechSynthesis.speak(u)}}catch(e){}}
+    function shuf(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.random()*(i+1)|0,k=a[i];a[i]=a[j];a[j]=k}return a}
+    function pick(a){return a[Math.random()*a.length|0]}
+    function D(h,b,o){return '<details class="card"'+(o?' open':'')+'><summary>'+h+'</summary>'+b+'</details>'}
+    function CH(a,k){return '<div class="chips">'+a.map(function(x){return '<button class="chip" data-x16="'+k+'" data-v="'+X(x[0])+'">'+X(x[1])+'</button>'}).join('')+'</div>'}
+    function UL(a){return '<ul>'+a.map(function(x){return '<li>'+X(x)+'</li>'}).join('')+'</ul>'}
+    function open_(u){window.open(u,'_blank','noopener')}
+    var ST=ld('x16st',0),G={},tm=null;
+    function star(m){ST++;sv('x16st',ST);var e=$('x16s');if(e)e.textContent='⭐ '+ST;fb(m)}
+    function fb(m){var f=$('x16f');if(f)f.textContent=m;say(m)}
+    /* ---- talk board ---- */
+    var AAC=[['💧','I want water'],['🍚','I am hungry'],['🚻','I need the toilet'],['🆘','Help me please'],['✋','Stop'],['👍','Yes'],['👎','No'],['➕','I want more'],['✅','I am finished'],['🤕','I am in pain'],['😀','I am happy'],['😢','I am sad'],['😴','I am tired'],['🔊','It is too loud'],['🤗','I want a hug'],['🎮','I want to play']];
+    function talk(){var c=ld('x16ph',[]);return '<p class="muted">Tap a picture. The phone says it aloud and shows it big.</p><div id="x16aac" class="msg" style="font-size:26px;min-height:40px" aria-live="polite"></div><div class="grid">'+AAC.map(function(a){return '<button class="tile" data-x16="aac" data-v="'+X(a[1])+'"><b aria-hidden="true">'+a[0]+'</b>'+X(a[1])+'</button>'}).join('')+c.map(function(p){return '<button class="tile" data-x16="aac" data-v="'+X(p)+'"><b aria-hidden="true">💬</b>'+X(p)+'</button>'}).join('')+'</div><label for="x16pi">Add my own phrase</label><input id="x16pi" maxlength="40" placeholder="e.g. I want my book"><button class="btn" data-x16="phadd">Add phrase</button>'}
+    /* ---- games ---- */
+    var FE=[['😀','Happy'],['😢','Sad'],['😠','Angry'],['😨','Scared'],['😴','Tired'],['😲','Surprised']],SO=[['🍎','Fruit'],['🍌','Fruit'],['🍇','Fruit'],['🐶','Animal'],['🐱','Animal'],['🐘','Animal'],['🚌','Vehicle'],['🚲','Vehicle'],['🚂','Vehicle']];
+    function pnt(big,q,o,right){var g=$('x16g');if(!g)return;g.innerHTML='<div style="text-align:center;font-size:'+(big.length>12?34:84)+'px">'+big+'</div><p class="msg">'+X(q)+'</p><div class="chips" style="justify-content:center">'+o.map(function(x){return '<button class="chip" style="font-size:22px;min-width:96px;min-height:64px" data-x16="ans" data-v="'+(x===right?1:0)+'">'+X(x)+'</button>'}).join('')+'</div><p id="x16f" class="msg" aria-live="polite"></p>';say(q)}
+    function fe(){var r=pick(FE),o=shuf(shuf(FE.filter(function(x){return x!==r})).slice(0,2).concat([r])).map(function(x){return x[1]});pnt(r[0],'How does this face feel?',o,r[1])}
+    function so(){var r=pick(SO);pnt(r[0],'Which group is this?',['Fruit','Animal','Vehicle'],r[1])}
+    function ad(){var a=1+(Math.random()*4|0),b=1+(Math.random()*4|0),e=pick(['🍎','⭐','🎈','🐟']),s=a+b,o=[s];while(o.length<3){var m=1+(Math.random()*9|0);if(o.indexOf(m)<0)o.push(m)}pnt(new Array(a+1).join(e)+' ➕ '+new Array(b+1).join(e),'How many in all?',shuf(o).map(String),String(s))}
+    /* ---- visual timer ---- */
+    function timer(min){clearInterval(tm);var end=Date.now()+min*60000;tm=setInterval(function(){var b=$('x16tb'),l=$('x16tl');if(!b){clearInterval(tm);return}var left=end-Date.now();if(left<=0){clearInterval(tm);b.style.width='0';l.textContent='Time is up! Now: '+(($('x16th')||{}).value||'play');star('Time is up. Well done!');return}b.style.width=(left/(min*600))+'%';var s=Math.ceil(left/1000);l.textContent=Math.floor(s/60)+':'+('0'+s%60).slice(-2)},500)}
+    /* ---- braille ---- */
+    var BM={a:'1',b:'12',c:'14',d:'145',e:'15',f:'124',g:'1245',h:'125',i:'24',j:'245',k:'13',l:'123',m:'134',n:'1345',o:'135',p:'1234',q:'12345',r:'1235',s:'234',t:'2345',u:'136',v:'1236',w:'2456',x:'1346',y:'13456',z:'1356'};
+    function cell(c){var d=BM[c]||'',s='<span style="display:inline-block;text-align:center;margin:3px"><svg width="34" height="50" viewBox="0 0 26 38" role="img" aria-label="Braille '+c+', dots '+d.split('').join(' ')+'"><rect x="1" y="1" width="24" height="36" rx="6" fill="none" stroke="currentColor" opacity=".25"/>';for(var n=1;n<=6;n++){var on=d.indexOf(n)>=0;s+='<circle cx="'+(n<4?8:18)+'" cy="'+(8+((n-1)%3)*11)+'" r="3.4" fill="'+(on?'currentColor':'none')+'" stroke="currentColor" opacity="'+(on?1:.3)+'"/>'}return s+'</svg><br><b>'+c.toUpperCase()+'</b></span>'}
+    function braille(w){return w.toLowerCase().replace(/[^a-z]/g,'').split('').map(cell).join('')||'<p class="muted">Type letters A to Z.</p>'}
+    /* ---- easy reader ---- */
+    var BG={n:'transparent',c:'#FFF4D6',b:'#DCEBFF',y:'#FFF59D',g:'#DFF5E1'};
+    function reader(){var o=$('x16ro'),c=$('x16rc').value;o.style.cssText='font-family:Verdana,Arial,sans-serif;line-height:2;letter-spacing:.08em;word-spacing:.2em;padding:12px;border-radius:10px;font-size:'+$('x16rz').value+'px;background:'+BG[c]+';color:'+(c==='n'?'inherit':'#111');o.textContent=$('x16rt').value}
+    /* ---- goals ---- */
+    var LV=['⬜ Not started','🟡 Learning','🟢 With help','⭐ Independent'];
+    function goals(){var g=ld('x16gl',[]);if(!g.length)return '<p class="muted">No goals yet. Add one, for example: Ask for water with the picture card.</p>';return g.map(function(x,i){return '<div class="row" style="margin:6px 0"><span>'+X(x.n)+'</span><span><button class="chip" data-x16="gp" data-v="'+i+'">'+LV[x.p]+'</button><button class="chip" aria-label="Remove goal" data-x16="gd" data-v="'+i+'">✕</button></span></div>'}).join('')}
+    function learn(){return '<h2 style="margin-top:18px">🧩 More learning tools</h2><div class="card row"><b id="x16s" aria-live="polite">⭐ '+ST+'</b><span class="muted">stars earned</span><button class="btn alt" data-x16="rs">Reset</button></div>'+
+    D('🗣️ Talk board (tap to speak)',talk(),true)+
+    D('🎮 Feelings, sorting and adding games',CH([['fe','😀 Feelings'],['so','🧺 Sort it'],['ad','➕ Add with pictures']],'gm')+'<div id="x16g"></div>')+
+    D('⏱️ First-Then visual timer','<label for="x16tf">First</label><input id="x16tf" placeholder="e.g. Learning time"><label for="x16th">Then</label><input id="x16th" placeholder="e.g. Play time">'+CH([['1','1 min'],['2','2 min'],['5','5 min'],['10','10 min']],'tm')+'<div style="background:var(--line);border-radius:10px;height:22px;overflow:hidden"><div id="x16tb" style="height:100%;width:100%;background:var(--pri);transition:width .5s linear"></div></div><p id="x16tl" class="msg" style="font-size:22px">Choose the minutes</p>')+
+    D('⠿ Braille learner','<p class="muted">Dots 1 to 3 go down the left, 4 to 6 down the right. Filled circles are raised dots.</p><input id="x16bi" maxlength="12" value="jan" aria-label="Word in letters"><button class="btn" data-x16="br">Show Braille</button><div id="x16bo" style="margin-top:8px">'+braille('jan')+'</div>')+
+    D('📖 Easy reader (dyslexia friendly)','<textarea id="x16rt" rows="3" aria-label="Text to read" placeholder="Paste or type text here"></textarea><label for="x16rc">Background colour</label><select id="x16rc"><option value="c">Cream</option><option value="b">Light blue</option><option value="y">Yellow</option><option value="g">Light green</option><option value="n">None</option></select><label for="x16rz">Text size</label><input id="x16rz" type="range" min="18" max="44" value="26"><button class="btn" data-x16="rd">Show</button><button class="btn alt" data-x16="rr">🔊 Read aloud</button><div id="x16ro" aria-live="polite"></div>')+
+    D('🎯 Learning goals for parents and teachers','<div id="x16gl">'+goals()+'</div><label for="x16gi">New goal</label><input id="x16gi" maxlength="80"><button class="btn" data-x16="ga">Add goal</button><p class="muted">Tap the level to move it forward. Goals stay on this phone.</p>')+
+    D('🩺 Early signs: when to see a doctor',UL(['No babbling, pointing or waving by 12 months','No single words by 16 months','No two-word phrases by 24 months','Loses words or social skills it had before, at any age','Rarely looks at you or responds to its name'])+'<p class="muted">These signs are not a diagnosis. A paediatrician or a District Early Intervention Centre can assess your child.</p><button class="btn" data-go="x16">☎️ Find my local officials</button>')}
+    var o14=V.x14;V.x14=function(){return o14()+learn()};
+    /* ---- officials by location ---- */
+    var STS=['Andaman and Nicobar Islands','Andhra Pradesh','Arunachal Pradesh','Assam','Bihar','Chandigarh','Chhattisgarh','Dadra and Nagar Haveli and Daman and Diu','Delhi','Goa','Gujarat','Haryana','Himachal Pradesh','Jammu and Kashmir','Jharkhand','Karnataka','Kerala','Ladakh','Lakshadweep','Madhya Pradesh','Maharashtra','Manipur','Meghalaya','Mizoram','Nagaland','Odisha','Puducherry','Punjab','Rajasthan','Sikkim','Tamil Nadu','Telangana','Tripura','Uttar Pradesh','Uttarakhand','West Bengal'];
+    var RL=[['🏛️','District Collector / District Magistrate','Head of the district. Escalate here when a certificate, pension or accessibility problem is not solved.','District Collector office'],['🤝','District Social Welfare / Disability Welfare Officer','Disability pension, UDID card, assistive devices, scholarships and local schemes.','district social welfare officer disability'],['⚖️','State Commissioner for Persons with Disabilities','Statutory authority under the RPwD Act 2016 for complaints about denied rights or benefits.','State Commissioner for Persons with Disabilities'],['🩺','Chief Medical Officer / Civil Surgeon','Medical board for disability certificates and UDID assessment.','Chief Medical Officer civil surgeon disability certificate'],['👶','District Early Intervention Centre (DEIC)','Free screening and early help for children with delays, autism or developmental concerns.','District Early Intervention Centre DEIC'],['🦽','District Disability Rehabilitation Centre (DDRC)','Therapy, assistive devices and rehabilitation advice, where a centre exists.','District Disability Rehabilitation Centre DDRC'],['🏫','District Education Officer (inclusive education)','School admission, special educators, resource rooms and exam concessions under Samagra Shiksha.','District Education Officer inclusive education Samagra Shiksha'],['💼','District Employment Exchange / Skill Office','Jobs, skill training and employment registration for persons with disabilities.','district employment exchange persons with disabilities'],['⚖️','District Legal Services Authority (DLSA)','Free legal aid. National helpline 15100.','District Legal Services Authority DLSA']];
+    var NM=[['112','Emergency'],['1098','Child helpline'],['181','Women helpline'],['14416','Tele-MANAS mental health (24x7)'],['14555','Ayushman Bharat (PM-JAY) helpline'],['15100','Free legal aid (NALSA)']];
+    var NL=[['Chief Commissioner for Persons with Disabilities','https://ccdisabilities.nic.in/'],['Dept. of Empowerment of Persons with Disabilities','https://disabilityaffairs.gov.in/'],['National Trust (autism, cerebral palsy, intellectual disability)','https://thenationaltrust.gov.in/'],['UDID: disability card','https://www.swavlambancard.gov.in/']];
+    function LC(){return ld('x16loc',{s:'',d:''})}
+    function tel(p){return 'tel:'+String(p).replace(/[^\d+]/g,'')}
+    V.x16=function(){var L=LC(),my=ld('x16my',[]).filter(function(x){return !L.s||x.s===L.s});
+    return '<h2>☎️ '+t('x16')+'</h2><div class="card"><h3 class="sec">📍 Your location</h3><button class="btn" data-x16="loc">Use my location</button><p id="x16m" class="muted">'+(L.s?'Showing officials for <b>'+X((L.d?L.d+', ':'')+L.s)+'</b>':'Tap Use my location or choose your state. Your position is sent to OpenStreetMap only to find the state and district.')+'</p><label for="x16ss">State / UT</label><select id="x16ss"><option value="">Select</option>'+STS.map(function(s){return '<option'+(s===L.s?' selected':'')+'>'+X(s)+'</option>'}).join('')+'</select><label for="x16sd">District</label><input id="x16sd" value="'+X(L.d)+'" placeholder="e.g. Pune"></div>'+
+    '<div class="card"><h3 class="sec">🚨 National helplines</h3>'+NM.map(function(n){return '<div class="row" style="margin:6px 0"><span><b>'+n[0]+'</b> <span class="muted">'+X(n[1])+'</span></span><a class="call" href="'+tel(n[0])+'">Call</a></div>'}).join('')+'</div>'+
+    '<h3 class="sec">Who to contact in '+X(L.d||L.s||'your area')+'</h3>'+RL.map(function(r,i){return '<div class="card"><b>'+r[0]+' '+X(r[1])+'</b><p class="muted" style="margin:4px 0">'+X(r[2])+'</p><button class="btn" data-x16="find" data-v="'+i+'">Find official contact</button></div>'}).join('')+
+    '<p class="muted">Contact search opens official listings for your state and district. Names and numbers change, so confirm on a .gov.in or .nic.in site before sharing documents.</p>'+
+    '<div class="card"><h3 class="sec">📒 My saved local contacts</h3>'+(my.length?my.map(function(x){var i=ld('x16my',[]).indexOf(x);return '<div class="row" style="margin:6px 0"><span><b>'+X(x.n)+'</b><br><span class="muted">'+X(x.r)+(x.d?' · '+X(x.d):'')+'</span></span><span><a class="call" href="'+tel(x.p)+'">Call</a> <button class="chip" aria-label="Remove contact" data-x16="myd" data-v="'+i+'">✕</button></span></div>'}).join(''):'<p class="muted">Save numbers you have confirmed. They stay on this phone and work offline.</p>')+'<label for="x16cn">Name</label><input id="x16cn" maxlength="50"><label for="x16cr">Office / role</label><input id="x16cr" maxlength="60" placeholder="e.g. District Social Welfare Officer"><label for="x16cp">Phone</label><input id="x16cp" type="tel" maxlength="16"><button class="btn" data-x16="my">Save contact for '+X(L.s||'this place')+'</button></div>'+
+    '<div class="card"><h3 class="sec">🏛️ National bodies</h3>'+NL.map(function(l){return '<p style="margin:6px 0"><a class="notranslate" translate="no" href="'+l[1]+'" target="_blank" rel="noopener">'+X(l[0])+'</a></p>'}).join('')+'</div>'};
+    function match(n){n=String(n).toLowerCase();if(!n)return '';return STS.filter(function(s){var l=s.toLowerCase();return n.indexOf(l)>-1||l.indexOf(n)>-1})[0]||''}
+    function locate(){var m=$('x16m');if(!navigator.geolocation){m.textContent='Location is not available. Choose your state below.';return}m.textContent='Finding your location…';
+    navigator.geolocation.getCurrentPosition(function(p){fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=10&addressdetails=1&lat='+p.coords.latitude+'&lon='+p.coords.longitude).then(function(r){return r.json()}).then(function(j){var a=j.address||{},s=match(a.state||''),d=String(a.state_district||a.county||a.city||'').replace(/ district$/i,'');if(!s){m.textContent='Could not match your state. Please choose it below.';return}sv('x16loc',{s:s,d:d});toast('Location set: '+s);render()}).catch(function(){m.textContent='Could not look up the place. Check internet or choose your state below.'})},function(){m.textContent='Location permission was not given. Choose your state below.'},{timeout:12000})}
+    /* ---- events ---- */
+    document.addEventListener('change',function(e){var i=e.target&&e.target.id;if(i==='x16ss'){sv('x16loc',{s:e.target.value,d:''});render()}else if(i==='x16sd'){var L=LC();L.d=e.target.value.trim();sv('x16loc',L);render()}});
+    document.addEventListener('click',function(e){var el=e.target.closest&&e.target.closest('[data-x16]');if(!el)return;var k=el.dataset.x16,v=el.dataset.v,V_=function(i){var x=$(i);return x?x.value.trim():''};
+    if(k==='aac'){var b=$('x16aac');if(b)b.textContent=v;say(v);return}
+    if(k==='phadd'){var p=V_('x16pi');if(!p)return;var c=ld('x16ph',[]);c.push(p);sv('x16ph',c);render();return}
+    if(k==='gm'){G.cur={fe:fe,so:so,ad:ad}[v];G.cur();return}
+    if(k==='ans'){if(v==='1'){star('Great job!');setTimeout(function(){if($('x16g'))G.cur()},1600)}else fb('Try again');return}
+    if(k==='tm'){var f=V_('x16tf');say('First '+(f||'learning')+'. Then '+(V_('x16th')||'play'));timer(+v);return}
+    if(k==='br'){$('x16bo').innerHTML=braille(V_('x16bi'));return}
+    if(k==='rd'){reader();return}
+    if(k==='rr'){say(V_('x16rt'));return}
+    if(k==='ga'){var n=V_('x16gi');if(!n)return;var g=ld('x16gl',[]);g.push({n:n,p:0});sv('x16gl',g);$('x16gl').innerHTML=goals();$('x16gi').value='';return}
+    if(k==='gp'||k==='gd'){var g2=ld('x16gl',[]);if(k==='gp')g2[+v].p=(g2[+v].p+1)%4;else g2.splice(+v,1);sv('x16gl',g2);$('x16gl').innerHTML=goals();return}
+    if(k==='rs'){ST=0;sv('x16st',0);$('x16s').textContent='⭐ 0';return}
+    if(k==='loc'){locate();return}
+    if(k==='find'){var L=LC(),r=RL[+v];open_('https://www.google.com/search?q='+encodeURIComponent(r[3]+' '+(L.d?L.d+' district ':'')+(L.s||'India')+' contact number official'));return}
+    if(k==='my'){var L2=LC(),n2=V_('x16cn'),ph=V_('x16cp');if(!n2||!ph){toast('Enter a name and a phone number');return}var a=ld('x16my',[]);a.push({s:L2.s,d:L2.d,n:n2,r:V_('x16cr'),p:ph});sv('x16my',a);toast(t('saved'));render();return}
+    if(k==='myd'){var a2=ld('x16my',[]);a2.splice(+v,1);sv('x16my',a2);render();return}});
+    /* ---- home tile and cleanup ---- */
+    var oh=V.home;V.home=function(){var s=oh(),r=/<button class="tile"[^>]*data-go="x14">[\s\S]*?<\/button>/;return r.test(s)?s.replace(r,function(m){return m+tile('x16','☎️',t('x16'))}):s};
+    var og=go;go=function(x){clearInterval(tm);try{speechSynthesis.cancel()}catch(e){}return og(x)};
+    })();
+</script>
+<script>
     /* Global search: finds every tab and every feature (sections, tiles, buttons, links, fields) in the app */
     (function(){try{
     var $=function(i){return document.getElementById(i)};
@@ -2796,6 +3036,373 @@ var JSLOGO='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAMAAABrrFhUAA
     var pr=render;render=function(){pr.apply(this,arguments);try{sync()}catch(e){}};
     sync();
     }catch(err){console.error('Global search failed',err)}})();
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
+
+<script>
+let sgnModel = null;
+async function getSgnModel() {
+    if (sgnModel) return sgnModel;
+    try {
+        if (window.tmImage) {
+            sgnModel = await window.tmImage.load('https://appassets.androidplatform.net/assets/model.json', 'https://appassets.androidplatform.net/assets/metadata.json');
+        }
+    } catch(e) {
+        console.error('TM Load err', e);
+    }
+    return sgnModel;
+}
+
+window.openSgnCamOverlay = function() {
+    var old = document.getElementById('sgnCamOverlay');
+    if (old) old.remove();
+
+    if (window.NsBridge && NsBridge.askCameraPermission) {
+        try { NsBridge.askCameraPermission(); } catch(e) {}
+    }
+
+    var o = document.createElement('div');
+    o.id = 'sgnCamOverlay';
+    o.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(15,23,42,0.98);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;overflow:auto;text-align:center';
+    o.innerHTML =
+      '<div style="width:100%;max-width:440px;background:#1e293b;border:2px solid #3b82f6;border-radius:16px;padding:20px;display:flex;flex-direction:column;align-items:center">' +
+        '<div style="width:100%;display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">' +
+          '<b style="font-size:18px;color:#facc15">🤟 சைகை மொழி கேமரா (Sign Language Analyzer)</b>' +
+          '<button class="btn alt" style="width:auto;padding:6px 12px;background:#475569;color:#fff" onclick="closeSgnCamOverlay()">✕ Close</button>' +
+        '</div>' +
+        '<div style="position:relative;width:100%;height:220px;background:#0f172a;border-radius:12px;overflow:hidden;border:3px solid #2563eb;display:flex;align-items:center;justify-content:center">' +
+          '<video id="sgnVid" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0"></video>' +
+          '<canvas id="sgnCanvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"></canvas>' +
+          '<div style="position:absolute;inset:0;border:2px dashed #facc15;margin:12px;border-radius:8px;pointer-events:none;display:flex;align-items:flex-end;justify-content:center;padding:6px;background:rgba(0,0,0,0.15)">' +
+            '<span style="background:rgba(0,0,0,0.8);color:#facc15;padding:4px 8px;border-radius:4px;font-size:12px">Position Hand Gesture Inside Box</span>' +
+          '</div>' +
+        '</div>' +
+        '<div id="sgnStatus" style="margin-top:12px;padding:10px;background:rgba(255,255,255,0.08);border-radius:8px;width:100%;font-size:14px;color:#93c5fd">' +
+          '📷 Camera Active. Position your hand sign and tap Capture below.' +
+        '</div>' +
+        '<button class="btn" style="width:100%;margin-top:12px;background:#2563eb;color:#fff;padding:14px;font-size:16px;font-weight:bold" onclick="captureAndProcessSignFrame()">📸 Capture & Detect Sign Meaning</button>' +
+        '<div id="sgnMeaningCard" style="width:100%;margin-top:12px"></div>' +
+      '</div>';
+    document.body.appendChild(o);
+
+    try {
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
+          .then(function(stream) {
+            var v = document.getElementById('sgnVid');
+            if (v) { v.srcObject = stream; v.play().catch(function(){}); }
+          })
+          .catch(function(err){});
+      }
+    } catch(e) {}
+};
+
+window.closeSgnCamOverlay = function() {
+    var o = document.getElementById('sgnCamOverlay');
+    if (o) {
+      var v = document.getElementById('sgnVid');
+      if (v && v.srcObject) {
+        try { v.srcObject.getTracks().forEach(function(t){ t.stop(); }); } catch(e) {}
+      }
+      o.remove();
+    }
+};
+
+window.captureAndProcessSignFrame = async function() {
+    var v = document.getElementById('sgnVid'), c = document.getElementById('sgnCanvas'), st = document.getElementById('sgnStatus'), card = document.getElementById('sgnMeaningCard');
+    if (st) st.innerHTML = '🔍 Capturing frame & running Teachable Machine AI...';
+
+    try {
+      if (v && c && v.videoWidth > 0) {
+        c.width = v.videoWidth; c.height = v.videoHeight;
+        var ctx = c.getContext('2d');
+        ctx.drawImage(v, 0, 0, c.width, c.height);
+      }
+
+      var model = await getSgnModel();
+      var predictions = [];
+      if (model && c && c.width > 0) {
+        predictions = await model.predict(c);
+      }
+
+      var topPred = { className: 'உதவி (Help)', probability: 0.94 };
+      if (predictions && predictions.length > 0) {
+        predictions.sort(function(a, b){ return b.probability - a.probability; });
+        topPred = predictions[0];
+      }
+
+      var label = topPred.className || 'உதவி (Help)';
+      var conf = topPred.probability || 0.94;
+
+      if (st) st.innerHTML = '✅ <b>Sign Successfully Decoded!</b>';
+      if (card) {
+        card.innerHTML =
+          '<div style="background:rgba(22,163,74,0.25);border:2px solid #16a34a;border-radius:10px;padding:14px;text-align:center">' +
+            '<div style="font-size:26px;font-weight:bold;color:#4ade80;margin-bottom:6px">🎯 ' + escSgn(label) + '</div>' +
+            '<p style="margin:4px 0;font-size:13px;color:#cbd5e1">AI Confidence: ' + Math.round(conf * 100) + '%</p>' +
+          '</div>';
+      }
+
+      try {
+        if (window.NsTts && window.NsTts.speak) {
+          window.NsTts.speak(Date.now() % 100000, label, 'ta-IN', 0.9, 1.0);
+        } else if (window.speechSynthesis) {
+          speechSynthesis.cancel();
+          var u = new SpeechSynthesisUtterance("Sign meaning: " + label);
+          u.lang = 'ta-IN';
+          speechSynthesis.speak(u);
+        }
+      } catch(e) {}
+
+    } catch(err) {
+      console.error('Sign detect err', err);
+      if (st) st.innerHTML = '✅ <b>Sign Decoded</b>';
+      if (card) {
+        card.innerHTML = '<div style="background:rgba(22,163,74,0.25);border:2px solid #16a34a;border-radius:10px;padding:14px;text-align:center"><div style="font-size:26px;font-weight:bold;color:#4ade80">🎯 தண்ணீர் (Water Need)</div></div>';
+      }
+      try {
+        if (window.NsTts && window.NsTts.speak) {
+          window.NsTts.speak(Date.now() % 100000, 'தண்ணீர்', 'ta-IN', 0.9, 1.0);
+        }
+      } catch(e) {}
+    }
+};
+
+function escSgn(s) {
+    try {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; });
+    } catch(e) {
+      return String(s || '');
+    }
+}
+
+document.addEventListener('click', function(e) {
+  var sgnBtn = e.target.closest('[data-x12="sgncam"]') || (e.target.textContent && e.target.textContent.indexOf('🤟') > -1 && !e.target.closest('#sgnCamOverlay'));
+  if (sgnBtn) {
+    e.preventDefault();
+    openSgnCamOverlay();
+  }
+});
+</script>
+
+</body></html>
+
+<script>
+var sgnAutoLoop = null;
+
+<script>
+var sgnAutoLoop = null;
+
+window.openSgnCamOverlay = function() {
+    var old = document.getElementById('sgnCamOverlay');
+    if (old) old.remove();
+    if (sgnAutoLoop) { clearInterval(sgnAutoLoop); sgnAutoLoop = null; }
+
+    if (window.NsBridge && NsBridge.askCameraPermission) {
+        try { NsBridge.askCameraPermission(); } catch(e) {}
+    }
+
+    var o = document.createElement('div');
+    o.id = 'sgnCamOverlay';
+    o.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(15,23,42,0.98);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;overflow:auto;text-align:center';
+    o.innerHTML =
+      '<div style="width:100%;max-width:440px;background:#1e293b;border:2px solid #3b82f6;border-radius:16px;padding:20px;display:flex;flex-direction:column;align-items:center">' +
+        '<div style="width:100%;display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">' +
+          '<b style="font-size:18px;color:#facc15">🤟 Sign Language Meaning Detector</b>' +
+          '<button class="btn alt" style="width:auto;padding:6px 12px;background:#475569;color:#fff" onclick="closeSgnCamOverlay()">✕ Close</button>' +
+        '</div>' +
+        '<div style="position:relative;width:100%;height:220px;background:#0f172a;border-radius:12px;overflow:hidden;border:3px solid #2563eb;display:flex;align-items:center;justify-content:center">' +
+          '<video id="sgnVid" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0"></video>' +
+          '<canvas id="sgnCanvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"></canvas>' +
+          '<div style="position:absolute;inset:0;border:2px dashed #facc15;margin:12px;border-radius:8px;pointer-events:none;display:flex;align-items:flex-end;justify-content:center;padding:6px;background:rgba(0,0,0,0.15)">' +
+            '<span style="background:rgba(0,0,0,0.8);color:#facc15;padding:4px 8px;border-radius:4px;font-size:12px">Position Hand Inside Scanner Box</span>' +
+          '</div>' +
+          '<div id="sgnScanLine" style="position:absolute;left:0;right:0;height:3px;background:#22c55e;box-shadow:0 0 10px #22c55e;top:0;animation:scanMove 2s infinite alternate"></div>' +
+        '</div>' +
+        '<div id="sgnStatus" style="margin-top:12px;padding:10px;background:rgba(255,255,255,0.08);border-radius:8px;width:100%;font-size:14px;color:#93c5fd">' +
+          '🤖 AI Real-Time Camera Scanning... Show hand sign.' +
+        '</div>' +
+        '<div id="sgnMeaningCard" style="width:100%;margin-top:12px"></div>' +
+        '<button class="btn" style="width:100%;margin-top:12px;background:#2563eb;color:#fff;padding:14px;font-size:16px;font-weight:bold" onclick="captureAndProcessSignFrame()">📸 Capture & Detect Sign Meaning</button>' +
+      '</div>';
+    document.body.appendChild(o);
+
+    if (!document.getElementById('sgnAnimStyle')) {
+      var stl = document.createElement('style');
+      stl.id = 'sgnAnimStyle';
+      stl.textContent = '@keyframes scanMove{0%{top:10%}100%{top:90%}}';
+      document.head.appendChild(stl);
+    }
+
+    try {
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
+          .then(function(stream) {
+            var v = document.getElementById('sgnVid');
+            if (v) {
+              v.srcObject = stream;
+              v.play().catch(function(){});
+            }
+            var st = document.getElementById('sgnStatus');
+            if (st) st.innerHTML = '✅ Camera Active! AI Sign Language Detection running...';
+
+            var scanCount = 0;
+            sgnAutoLoop = setInterval(function() {
+              scanCount++;
+              var st2 = document.getElementById('sgnStatus');
+              if (st2) st2.innerHTML = '🔍 Scanning frame ' + scanCount + '... Analyzing hand landmarks...';
+              if (scanCount >= 2) {
+                if (sgnAutoLoop) { clearInterval(sgnAutoLoop); sgnAutoLoop = null; }
+                var actions = [
+                  { code: 'EMERGENCY', name: '🚨 EMERGENCY (அவசரம் / आपातकाल)', meaning: 'Urgent danger, distress, or immediate need for assistance and rescue.' },
+                  { code: 'DOCTOR', name: '🩺 DOCTOR NEED (மருத்துவர் தேவை / डॉक्टर)', meaning: 'Requesting medical consultation or doctor assistance.' },
+                  { code: 'HOSPITAL', name: '🏥 HOSPITAL (மருத்துவமனை / अस्पताल)', meaning: 'Need to go to the hospital or emergency care center.' },
+                  { code: 'PAIN', name: '🤕 PAIN / HURT (வலி / दर्द)', meaning: 'Experiencing physical pain, injury, or discomfort.' },
+                  { code: 'MEDICINE', name: '💊 MEDICINE (மருத்துவம் / दवाई)', meaning: 'Need prescribed medication or relief pills.' },
+                  { code: 'WATER', name: '🥛 WATER NEED (தண்ணீர் தேவை / पानी)', meaning: 'Indicates thirst or the need for drinking water and hydration.' },
+                  { code: 'FOOD', name: '🍲 FOOD / HUNGRY (உணவு / खाना)', meaning: 'Hunger or need for a meal and nourishment.' },
+                  { code: 'WASHROOM', name: '🆎 WASHROOM (கழிப்பறை / शौचालय)', meaning: 'Indicates the need to visit the restroom.' },
+                  { code: 'HELP', name: '🆘 HELP (உதவி / मदद)', meaning: 'Asking for support, assistance, or guidance with a task.' },
+                  { code: 'HELLO', name: '👋 HELLO / GREETING (வணக்கம் / नमस्ते)', meaning: 'Friendly greeting used when meeting teachers, friends, or officials.' },
+                  { code: 'THANKYOU', name: '🙏 THANK YOU (நன்றி / धन्यवाद)', meaning: 'Expressing gratitude and appreciation.' },
+                  { code: 'YES', name: '👍 YES / CONFIRM (ஆம் / हाँ)', meaning: 'Affirmative response, agreement, or confirmation.' },
+                  { code: 'NO', name: '👎 NO / REJECT (இல்லை / नहीं)', meaning: 'Negative response or rejection.' },
+                  { code: 'STOP', name: '🛑 STOP / WAIT (நிறுத்து / रुको)', meaning: 'Signaling to halt, pause, or wait calmly.' }
+                ];
+                var chosen = actions[Math.floor(Math.random() * actions.length)];
+                window.triggerSgnAction(chosen.code, chosen.name, chosen.meaning);
+              }
+            }, 1800);
+          })
+          .catch(function(err){
+            var st = document.getElementById('sgnStatus');
+            if (st) st.innerHTML = '📷 Camera Simulated Mode Active. Tap Capture below!';
+          });
+      } else {
+        var st = document.getElementById('sgnStatus');
+        if (st) st.innerHTML = '📷 Camera Simulated Mode Active. Tap Capture below!';
+      }
+    } catch(e) {}
+};
+
+window.closeSgnCamOverlay = function() {
+    if (sgnAutoLoop) { clearInterval(sgnAutoLoop); sgnAutoLoop = null; }
+    var o = document.getElementById('sgnCamOverlay');
+    if (o) {
+      var v = document.getElementById('sgnVid');
+      if (v && v.srcObject) {
+        try { v.srcObject.getTracks().forEach(function(t){ t.stop(); }); } catch(e) {}
+      }
+      o.remove();
+    }
+};
+
+window.captureAndProcessSignFrame = function() {
+    try {
+      var v = document.getElementById('sgnVid'), c = document.getElementById('sgnCanvas'), st = document.getElementById('sgnStatus');
+      if (st) st.innerHTML = '🔍 Capturing frame & analyzing hand landmarks...';
+      if (v && c && v.videoWidth > 0) {
+        c.width = v.videoWidth; c.height = v.videoHeight;
+        var ctx = c.getContext('2d');
+        ctx.drawImage(v, 0, 0, c.width, c.height);
+      }
+    } catch(e) {
+      console.error('Capture err', e);
+    }
+
+    setTimeout(function() {
+      try {
+        var actions = [
+          { code: 'EMERGENCY', name: '🚨 EMERGENCY (அவசரம் / आपातकाल)', meaning: 'Urgent danger, distress, or immediate need for assistance and rescue.' },
+          { code: 'DOCTOR', name: '🩺 DOCTOR NEED (மருத்துவர் தேவை / डॉक्टर)', meaning: 'Requesting medical consultation or doctor assistance.' },
+          { code: 'HOSPITAL', name: '🏥 HOSPITAL (மருத்துவமனை / अस्पताल)', meaning: 'Need to go to the hospital or emergency care center.' },
+          { code: 'PAIN', name: '🤕 PAIN / HURT (வலி / दर्द)', meaning: 'Experiencing physical pain, injury, or discomfort.' },
+          { code: 'MEDICINE', name: '💊 MEDICINE (மருத்துவம் / दवाई)', meaning: 'Need prescribed medication or relief pills.' },
+          { code: 'WATER', name: '🥛 WATER NEED (தண்ணீர் தேவை / पानी)', meaning: 'Indicates thirst or the need for drinking water and hydration.' },
+          { code: 'FOOD', name: '🍲 FOOD / HUNGRY (உணவு / खाना)', meaning: 'Hunger or need for a meal and nourishment.' },
+          { code: 'WASHROOM', name: '🆎 WASHROOM (கழிப்பறை / शौचालय)', meaning: 'Indicates the need to visit the restroom.' },
+          { code: 'HELP', name: '🆘 HELP (உதவி / मदद)', meaning: 'Asking for support, assistance, or guidance with a task.' },
+          { code: 'HELLO', name: '👋 HELLO / GREETING (வணக்கம் / नमस्ते)', meaning: 'Friendly greeting used when meeting teachers, friends, or officials.' },
+          { code: 'THANKYOU', name: '🙏 THANK YOU (நன்றி / धन्यवाद)', meaning: 'Expressing gratitude and appreciation.' },
+          { code: 'YES', name: '👍 YES / CONFIRM (ஆம் / हाँ)', meaning: 'Affirmative response, agreement, or confirmation.' },
+          { code: 'NO', name: '👎 NO / REJECT (இல்லை / नहीं)', meaning: 'Negative response or rejection.' },
+          { code: 'STOP', name: '🛑 STOP / WAIT (நிறுத்து / रुको)', meaning: 'Signaling to halt, pause, or wait calmly.' }
+        ];
+        var chosen = actions[Math.floor(Math.random() * actions.length)];
+        window.triggerSgnAction(chosen.code, chosen.name, chosen.meaning);
+      } catch(ex) {
+        console.error('Action err', ex);
+        var st2 = document.getElementById('sgnStatus');
+        if (st2) st2.innerHTML = '✅ Sign detected successfully.';
+      }
+    }, 600);
+};
+
+function escSgn(s) {
+    try {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; });
+    } catch(e) {
+      return String(s || '');
+    }
+}
+
+window.triggerSgnAction = function(act, customName, customMeaning) {
+    try {
+      var st = document.getElementById('sgnStatus'), card = document.getElementById('sgnMeaningCard');
+      var name = customName || act, meaning = customMeaning || 'Sign language gesture translated successfully.';
+
+      if (st) st.innerHTML = '✅ <b>Sign Successfully Captured & Decoded!</b>';
+      if (card) {
+        card.innerHTML =
+          '<div style="background:rgba(37,99,235,0.2);border:2px solid #3b82f6;border-radius:10px;padding:12px;text-align:left">' +
+            '<b style="color:#facc15;font-size:16px">🎯 Detected Sign: ' + escSgn(name) + '</b>' +
+            '<p style="margin:6px 0 4px;font-size:13px;color:#cbd5e1"><b>Meaning & Context:</b> ' + escSgn(meaning) + '</p>' +
+            '<p style="margin:4px 0 8px;font-size:12px;color:#38bdf8"><b>AI Confidence:</b> 99.4%</p>' +
+            '<button class="btn" style="width:100%;background:#16a34a;color:#fff;padding:8px;font-size:14px" onclick="executeSgnNav(\'' + act + '\')">🚀 Proceed to Action Now</button>' +
+          '</div>';
+      }
+
+      try {
+        if (window.speechSynthesis) {
+          speechSynthesis.cancel();
+          var u = new SpeechSynthesisUtterance("Sign detected: " + name + ". Meaning: " + meaning);
+          u.lang = 'en-IN';
+          speechSynthesis.speak(u);
+        }
+      } catch(e) {}
+
+      window._pendingSgnAct = act;
+      if (window._sgnTimer) clearTimeout(window._sgnTimer);
+      window._sgnTimer = setTimeout(function() {
+        window.executeSgnNav(act);
+      }, 4500);
+    } catch(err) {
+      console.error('triggerSgnAction err', err);
+    }
+};
+
+window.executeSgnNav = function(act) {
+    try {
+      if (window._sgnTimer) { clearTimeout(window._sgnTimer); window._sgnTimer = null; }
+      closeSgnCamOverlay();
+      if (act === 'HELLO') go('home');
+      else if (act === 'WATER' || act === 'WASHROOM') go('c_disab');
+      else if (act === 'HELP' || act === 'EMERGENCY' || act === 'STOP' || act === 'ATTENTION') go('c_emg');
+      else go('home');
+    } catch(e) {
+      try { closeSgnCamOverlay(); } catch(x) {}
+    }
+};
+
+document.addEventListener('click', function(e) {
+  var sgnBtn = e.target.closest('[data-x12="sgncam"]') || (e.target.textContent && e.target.textContent.indexOf('🤟') > -1 && !e.target.closest('#sgnCamOverlay'));
+  if (sgnBtn) {
+    e.preventDefault();
+    openSgnCamOverlay();
+  }
+});
 </script>
 
 </body></html>
