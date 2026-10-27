@@ -1,75 +1,125 @@
-/* Jan Seva: load demo data into localStorage.
-   Paste in the browser console on the app page, then reload. */
-(function(){
-  var data = {
-  "prof": {
-    "n": "Demo User",
-    "a": "34",
-    "g": "Female",
-    "q": "Graduate",
-    "s": "Tamil Nadu",
-    "dt": "Dindigul",
-    "ph": "9876543210",
-    "em": "9876500000",
-    "bg": "O+",
-    "h": "",
-    "sl": ""
-  },
-  "contacts": [
-    {
-      "n": "Mother",
-      "p": "9876500001"
-    },
-    {
-      "n": "Neighbour Ravi",
-      "p": "9876500002"
-    },
-    {
-      "n": "Family Doctor",
-      "p": "9876500003"
+/*!
+ * Jan Seva - load-sample-data.js
+ * Seeds realistic DEMO data into localStorage so you can test the app,
+ * take screenshots or record a demo video without typing everything by hand.
+ *
+ * Usage
+ *   1. Open index.html, tap "Continue as guest" (or open any page of the app).
+ *   2. Paste this whole file into the browser console, OR add
+ *        <script src="load-sample-data.js"></script>
+ *      before </body> temporarily.
+ *   3. Reload the page.
+ *
+ * API (available as window.JanSevaSample)
+ *   JanSevaSample.load()    - write the demo data (runs automatically once)
+ *   JanSevaSample.clear()   - remove ONLY the keys written by this script
+ *   JanSevaSample.keys      - list of keys managed by this script
+ *
+ * All data is fictional. Storage keys use the app's "ns_" prefix and JSON values.
+ */
+(function () {
+  'use strict';
+
+  var PREFIX = 'ns_';
+  var DAY = 24 * 60 * 60 * 1000;
+  var now = Date.now();
+
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function isoDay(offsetDays) {
+    var d = new Date(now + offsetDays * DAY);
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  }
+  function month(offset) {                       // "YYYY-MM"
+    var d = new Date(); d.setMonth(d.getMonth() + offset);
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1);
+  }
+
+  /* Coimbatore, Tamil Nadu (demo location) */
+  var HOME = { lat: 11.0168, lng: 76.9558 };
+
+  var DATA = {
+    lang: 'en',
+
+    /* Profile without PIN so the demo opens straight away.
+       q = qualification code (q8, q10, q12, iti, dip, grad, sci, com, eng, agri, med ...) */
+    prof: { n: 'Demo Citizen', a: 32, s: 'Tamil Nadu', q: 'grad', bg: 'B+' },
+    qual: 'grad',
+
+    /* Women's-safety / SOS contacts: { n: name, p: phone } */
+    contacts: [
+      { n: 'Amma (Mother)', p: '9876500001' },
+      { n: 'Anna (Brother)', p: '9876500002' },
+      { n: 'Neighbour - Selvi', p: '9876500003' }
+    ],
+
+    /* Civic reports. cat: 1 dustbin, 2 drain, 3 toilet, 4 mosquito water, 5 illegal activity,
+       6 other, 7 drugs, 8 child labour, 9 harassment of women, 10 child abuse,
+       11 water tank, 12 street cleaning, 13 road damage, 14 corruption */
+    reports: [
+      { id: 'JS-4F2A9', cat: '1',  desc: 'Overflowing dustbin near the Gandhipuram bus stand since 3 days.',
+        photo: null, loc: HOME, anon: false, at: now - 1 * DAY, done: false, rating: 0 },
+      { id: 'JS-7K3QD', cat: '13', desc: 'Large pothole on Avinashi Road, two-wheelers are skidding.',
+        photo: null, loc: { lat: 11.0183, lng: 77.0054 }, anon: false, at: now - 9 * DAY, done: false, rating: 0 },
+      { id: 'JS-2M8XB', cat: '4',  desc: 'Stagnant water behind the market - mosquito breeding.',
+        photo: null, loc: { lat: 11.0049, lng: 76.9611 }, anon: true, at: now - 15 * DAY, done: true, rating: 4 },
+      { id: 'JS-9P6TC', cat: '12', desc: 'Street not cleaned for a week near the temple road.',
+        photo: null, loc: null, anon: false, at: now - 20 * DAY, done: true, rating: 5 }
+    ],
+
+    /* Saved places: { c: category index, n: name, tm: time label, lat, lng } */
+    places: [
+      { c: 2, n: 'Coimbatore Medical College Hospital', tm: new Date(now - 2 * DAY).toLocaleString(), lat: 11.0204, lng: 76.9680 },
+      { c: 3, n: 'Gandhipuram Central Bus Stand',        tm: new Date(now - 3 * DAY).toLocaleString(), lat: 11.0183, lng: 76.9674 },
+      { c: 9, n: 'R.S. Puram Police Station',            tm: new Date(now - 5 * DAY).toLocaleString(), lat: 11.0083, lng: 76.9496 }
+    ],
+
+    /* Reminders (exams, medicine, vaccination): { n, d: "YYYY-MM-DD" } sorted by date */
+    rem: [
+      { n: 'TNPSC Group 4 - hall ticket download', d: isoDay(6) },
+      { n: 'BP medicine refill',                   d: isoDay(10) },
+      { n: 'Flu vaccination - Dr. Meena',          d: isoDay(21) }
+    ],
+
+    /* Today's health state (resets automatically each day in the app) */
+    hx: { d: isoDay(0), steps: 3480, glass: 5, meals: [1, 1, 0],
+          hr: { v: 74, t: now - 3600 * 1000 }, goal: 6000, wmin: 60, food: true, auto: false, lw: 0, lm: '' },
+
+    /* Old-age pension tracker: type index, expected amount, due day, received months */
+    pen: { type: 0, amt: 1200, day: 5,
+           rec: [ { m: month(-3), a: 1200 }, { m: month(-2), a: 1200 }, { m: month(-1), a: 1200 } ] },
+
+    /* Savings: income split and goals */
+    sav_b: { inc: 25000, need: 13000, want: 5000 },
+    sav_g: [
+      { n: 'Emergency fund', t: 50000, s: 18000, m: 2000 },
+      { n: 'New phone',      t: 15000, s: 6000,  m: 1500 }
+    ]
+  };
+
+  var KEYS = Object.keys(DATA);
+
+  function load() {
+    try {
+      KEYS.forEach(function (k) {
+        localStorage.setItem(PREFIX + k, JSON.stringify(DATA[k]));
+      });
+      localStorage.setItem(PREFIX + '_sample_loaded', '1');
+      console.log('[Jan Seva] Sample data loaded (' + KEYS.length + ' keys). Reload the page.');
+      return true;
+    } catch (e) {
+      console.error('[Jan Seva] Could not write sample data:', e);
+      return false;
     }
-  ],
-  "reports": [
-    {
-      "id": "NS-DEMO23",
-      "cat": "Road",
-      "desc": "Large pothole near the bus stand causing accidents.",
-      "photo": null,
-      "loc": null,
-      "anon": false,
-      "at": 1760000000000,
-      "done": false,
-      "rating": 0
-    },
-    {
-      "id": "NS-DEMO45",
-      "cat": "Water",
-      "desc": "Street tap leaking for three days.",
-      "photo": null,
-      "loc": null,
-      "anon": true,
-      "at": 1759000000000,
-      "done": true,
-      "rating": 4
-    }
-  ],
-  "rem": [
-    {
-      "n": "Pay electricity bill",
-      "d": "2026-11-05"
-    },
-    {
-      "n": "Doctor appointment",
-      "d": "2026-11-12"
-    },
-    {
-      "n": "Renew passport",
-      "d": "2027-01-20"
-    }
-  ]
-};
-  Object.keys(data).forEach(function(k){
-    localStorage.setItem('ns_' + k, JSON.stringify(data[k]));
-  });
-  console.log('Jan Seva sample data loaded. Reload the page.');
+  }
+
+  function clear() {
+    KEYS.concat(['_sample_loaded']).forEach(function (k) {
+      localStorage.removeItem(PREFIX + k);
+    });
+    console.log('[Jan Seva] Sample data removed. Reload the page.');
+  }
+
+  window.JanSevaSample = { load: load, clear: clear, keys: KEYS, data: DATA };
+
+  if (!localStorage.getItem(PREFIX + '_sample_loaded')) load();
 })();
