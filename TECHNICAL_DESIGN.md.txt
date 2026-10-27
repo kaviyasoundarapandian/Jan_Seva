@@ -1,180 +1,132 @@
-# Jan Seva: Technical Design Document
+# Jan Seva — Technical Design
 
-## 1. Purpose
+## 1. Goals
 
-Give citizens one simple, offline-capable, multilingual app for emergency help, reporting problems and finding government services, with privacy by default (data stays on the device).
+- One app for everyday citizen services in India, usable by anyone, in their own language.
+- Works with no sign-up and with weak connectivity; sensitive data never leaves the device.
+- Single deployable artifact (`index.html`) that runs in a browser and inside an Android WebView.
 
-## 2. Design goals
+## 2. Architecture
 
-| Goal | How it is met |
-|------|---------------|
-| Works on low-end phones and weak networks | Single static file, no framework, service worker caching |
-| Privacy | No backend; data in `localStorage` |
-| Accessibility | Large touch targets, read-aloud, voice input, dark mode, ARIA labels |
-| Reach | Many Indian languages, tap-to-call helplines |
-| Easy to host | Static files only |
-
-## 3. System architecture
-
-```mermaid
-flowchart TB
-  subgraph Device["User's phone (browser / installed PWA)"]
-    UI["UI layer: render() + view functions V.*"]
-    State["State: profile, tab, language"]
-    Store[("localStorage: ns_* keys")]
-    SW["Service worker (sw.js)"]
-    Web["Web APIs: Geolocation, Notifications, SpeechSynthesis, SpeechRecognition, Share, Camera/File input"]
-  end
-  UI --> State
-  UI <--> Store
-  UI --> Web
-  SW --> UI
-  subgraph External["External services (optional, online only)"]
-    GT["Google Translate"]
-    OM["Open-Meteo weather"]
-    GOV["Official government portals"]
-    AI["User's own AI endpoint (HTTPS)"]
-  end
-  UI -- "translate text" --> GT
-  UI -- "lat/lng" --> OM
-  UI -- "links" --> GOV
-  UI -- "chat messages" --> AI
+```
+┌────────────────────────── Android app (WebView shell) ──────────────────────────┐
+│  assets/index.html  ·  assets/model.json  ·  assets/metadata.json               │
+│  Served through WebViewAssetLoader → https://appassets.androidplatform.net/...  │
+└──────────────────────────────────────────────────────────────────────────────────┘
+                                   │ same file also runs in any browser
+                                   ▼
+┌────────────────────────────── index.html (SPA) ──────────────────────────────────┐
+│  UI layer     : header (language, profile) · search · tile grid · bottom nav     │
+│  View layer   : V.<name>() functions return HTML strings, render() swaps them    │
+│  Router       : go(name) + data-go attributes + delegated click handler          │
+│  i18n         : t(key) dictionaries, 22 languages, bilingual labels (EN/HI)      │
+│  State        : in-memory vars (prof, reports, contacts, places, rem, S, PN …)   │
+│  Storage      : ld(k,default)/sv(k,value) → localStorage "ns_<k>" (JSON)         │
+│  Add-ons      : IIFE modules that wrap/extend V.* (health, pay, radio, security) │
+│  Device APIs  : geolocation, camera, mic, speech, vibration, notifications,      │
+│                 DeviceMotion, Web Bluetooth, clipboard, share, service worker    │
+│  ML           : TensorFlow.js + Teachable Machine image model (sign language)    │
+└──────────────────────────────────────────────────────────────────────────────────┘
+                                   │ outbound only, user-initiated
+                                   ▼
+  Open-Meteo (forecast) · Google Maps / OSM links · Bhashini · official .gov.in portals
 ```
 
-## 4. Application structure
+### Key design decisions
 
-The app is one `index.html` made of a base app plus numbered add-on modules, each in an IIFE (immediately invoked function) that extends the base.
+| Decision | Reason |
+|---|---|
+| Single HTML file | Easy to host, audit, cache and bundle into the APK |
+| No backend | Zero hosting cost, no personal data collection, works offline after first load |
+| Views as HTML-string functions | No framework needed; tiny runtime; easy to wrap with add-ons (`var o=V.home; V.home=function(){…o()…}`) |
+| Event delegation with `data-*` | One click listener handles all actions (`data-go`, `data-sv`, `data-hx`, `data-del` …) |
+| Links to official portals | Jan Seva guides users, it never handles OTPs, Aadhaar numbers or payments |
+| Local-only profile | Privacy; guest mode is the default |
 
-```mermaid
-flowchart LR
-  Base["Base app: T (translations), V (views), render(), tab router"]
-  A2["Add-on 2: services, payments, documents, media"]
-  A3["Add-on 3: password + TOTP 2-step"]
-  A5["Add-on 5-7: front-page boxes, splash, radio, home order"]
-  A8["Add-on 8-9: pension tracker, self care, help hub, money, learning"]
-  A10["Add-on 10-12: careers, farm storage, category pages, sign-language access"]
-  A14["Add-on 14: Panchangam + Nanba chat"]
-  Base --> A2 --> A3 --> A5 --> A8 --> A10 --> A14
-```
+## 3. Navigation
 
-### Core pieces
+Home tile grid and bottom nav both use `data-go="<view>"`.
 
-| Piece | Role |
-|-------|------|
-| `T.<lang>` | Translation dictionaries (`en`, `hi`, and others loaded via translation) |
-| `V.<name>` | View functions; each returns an HTML string for one screen |
-| `render()` | Paints the current tab into the page and updates the bottom navigation |
-| `data-go="<tab>"` | Click handlers switch tab (event delegation on `document`) |
-| `sv(key, value)` / `ld(key, default)` | Save / load JSON in `localStorage` with the `ns_` prefix |
-| `esc()` / `E()` | HTML escaping for user text |
+| Group | Views |
+|---|---|
+| Core | `home`, `welcome`, `prof`, `report`, `myreports`, `places`, `alerts`, `gov`, `health`, `water`, `pension`, `social`, `radio`, `nanba` |
+| Category pages | `c_emg`, `c_dis`, `c_nec`, `c_trn`, `c_hlt`, `c_sch`, `c_old`, `c_nws`, `c_pay`, `c_sav`, `c_fun`, `c_idea`, `c_bld`, `c_exm`, `c_bk`, `c_doc`, `c_leg`, `c_any`, `c_snd`, `c_lon`, `c_frm`, `c_agr`, `c_cal` |
+| Helpers | `hBill`, `hBook`, `hDoc`, `hLoan`, `hPost`, `pay`, `watch`, `x9acc`, `x9fun`, `x9help`, `x9learn`, `x9me`, `x9money`, `x10farm`, `x14`, `x15`, `x16` |
 
-### Screen flow
+The bottom nav shows Home, Emergency, Disaster, Health, Schemes, Pay, Save, Panchangam, Nanba and scrolls horizontally.
 
-```mermaid
-flowchart TD
-  Splash --> Welcome{Profile exists?}
-  Welcome -- No --> Create["Create profile / Guest"]
-  Welcome -- Yes --> Lock{PIN set?}
-  Lock -- Yes --> Pin["Enter PIN / 2-step"]
-  Lock -- No --> Home
-  Create --> Home
-  Pin --> Home
-  Home --> SOS["SOS / Emergency"]
-  Home --> Report["Report a problem"] --> MyReports
-  Home --> Cats["Category pages"]
-  Home --> Care["My care / Health / Water"]
-  Home --> Nanba["Nanba chat"]
-  Home --> Cal["Panchangam"]
-  Home --> Prof["Profile and security"]
-```
+## 4. Data model (localStorage, prefix `ns_`)
 
-## 5. Data model (localStorage)
+All values are JSON. `ld(key, default)` reads, `sv(key, value)` writes.
 
-All keys are prefixed `ns_`. Values are JSON.
+| Key | Shape | Purpose |
+|---|---|---|
+| `lang` | `"en"` | UI language code |
+| `guest` | `true/false` | Guest mode chosen |
+| `prof` | `{n, a, s, q, bg, dt, h, sl}` | Profile: name, age, state, qualification code, blood group, date, PIN hash `h`, salt `sl` |
+| `sec` | object | Password / second-factor settings (PBKDF2) |
+| `contacts` | `[{n, p}]` | SOS contacts (name, phone) |
+| `reports` | `[{id, cat, desc, photo, loc, anon, at, done, rating}]` | Civic reports; `cat` is 1–14, `loc` = `{lat,lng}`, `photo` = data URL |
+| `nsRem` | `{reportId: timestamp}` | Last "no reply" reminder per report |
+| `places` | `[{c, n, tm, lat, lng}]` | Saved places (category index, name, time) |
+| `rem` | `[{n, d}]` | Exam / medicine reminders (name, `YYYY-MM-DD`) |
+| `qual` | `"grad"` | Qualification for guests |
+| `hx` | `{d, steps, glass, meals[3], hr, goal, wmin, food, auto, lw, lm}` | Daily health state, reset each day |
+| `pen` | `{type, amt, day, rec:[{m, a}]}` | Pension tracker |
+| `sav_g` | `[{n, t, s, m}]` | Savings goals (name, target, saved, monthly) |
+| `sav_b` | `{inc, need, want}` | Income split |
+| `x16my`, `x16st`, `x16loc`, `x16ph`, `x16gl` | various | Officials directory (saved entries and filters) |
+| `nanba`, `nb_api` | array / string | Nanba chat history and optional API setting |
+| `wxLoc`, `dsLoc`, `dsAuto`, `dsSeen`, `gps` | various | Weather / disaster location and alert state |
+| `donor`, `bdtap`, `bvl`, `bwake` | various | Blood donation, tap/wake helpers |
+| `notes`, `sleep`, `wt`, `cal_*`, `rad`, `acc`, `sgn`, `ul` | various | Notes, sleep, weight, calendar, radio, accessibility, sign-language and UI flags |
 
-| Key | Shape | Description |
-|-----|-------|-------------|
-| `ns_prof` | `{n, a, g, q, s, dt, ph, em, bg, h, sl}` | Profile: name, age, gender, qualification, state, district, phone, emergency contact, blood group, plus health and sleep data |
-| `ns_contacts` | `[{n, p}]` | Emergency contacts (name, phone) |
-| `ns_reports` | `[{id, cat, desc, photo, loc, anon, at, done, rating}]` | Problem reports. `id` format `NS-XXXXXX`, generated by `crypto.getRandomValues` |
-| `ns_rem` | `[{n, d}]` | Reminders (name, date) |
-| `ns_pen` | `{...}` | Pension tracking |
-| `ns_places` | `[...]` | Saved places |
-| `ns_sec` | `{...}` | Security settings (PIN / 2-step) |
-| `ns_nanba` | `[{r, h}]` | Last 40 chat messages (`r` = `me` or `bot`) |
-| `ns_nb_api` | `string` | Optional AI endpoint URL |
-| `ns_lang`, `ns_ul` | `string` | Language selection |
+Photos are stored as data URLs; if `localStorage` is full the app shows a "storage full" toast.
 
-Report status labels: Saved, Sent to authority, Reached authority, In progress, Resolved.
+## 5. Feature design notes
 
-## 6. Key flows
+**Emergency / SOS.** `tel:` links for 112/108/100/101. SOS gets the GPS fix, builds an SMS containing a Google Maps link and opens the SMS composer for every saved contact. Nothing is sent to a server.
 
-### 6.1 Reporting a problem
+**Reports.** A report needs a description or a photo. It gets a short code (`id`) the user can quote. Statuses: open → resolved (`done`), plus a 1–5 `rating`. A timer flags reports with no reply for 7+ days (stored in `nsRem`).
 
-```mermaid
-sequenceDiagram
-  participant U as User
-  participant A as App
-  participant L as localStorage
-  U->>A: Choose category, type description, add photo, allow location
-  A->>A: Validate input and escape text
-  A->>A: Generate ID (NS-XXXXXX)
-  A->>L: Save report
-  A-->>U: Show reference ID and status
-  U->>A: Open My Reports
-  A->>L: Load reports
-  A-->>U: List with status
-```
+**Disaster alerts.** Uses the Open-Meteo forecast API for the user's coordinates (next 3 days), flags heavy rain, wind, thunderstorm, extreme heat. Optional auto-check every ~30 minutes and a local notification. Always labelled "indicative, not official — follow IMD / local authority".
 
-### 6.2 Nanba chat
+**Health.** Step counter via `DeviceMotion`; heart rate by manual entry or Web Bluetooth; water and meals; reminders via the Notifications API; optional fall/impact detection with a 15-second countdown before it calls 108/112.
 
-```mermaid
-flowchart TD
-  In["User message"] --> Crisis{"Matches crisis words?"}
-  Crisis -- Yes --> Help["Show Tele-MANAS 14416 and 112"]
-  Crisis -- No --> API{"AI endpoint set?"}
-  API -- Yes --> Call["POST to endpoint (last 12 messages)"]
-  Call -- ok --> Show["Show reply"]
-  Call -- fail --> Offline
-  API -- No --> Offline["Offline rule-based reply (pattern match + fallback)"]
-  Offline --> Show
-  Show --> Save["Save last 40 messages"]
-  Show --> Speak{"Read aloud on?"}
-  Speak -- Yes --> TTS["speechSynthesis"]
-```
+**Translator & voice.** Browser SpeechRecognition for input, SpeechSynthesis for output, translation through a Google Translate / Bhashini hand-off (needs internet).
 
-### 6.3 Language and read-aloud
+**Sign language.** `model.json` + `metadata.json` (TF.js 3.18 Teachable Machine) with labels: உதவி (help), डॉक्टर (doctor), மருத்துவமனை (hospital), போலீஸ் (police), தண்ணீர் (water), மருத்துவம் (medicine), வலி (pain), ஆம் (yes), No, நன்றி (thanks). Runs on-device via the camera.
 
-English and Hindi are built in. For other languages, text is translated through Google Translate when online. Read-aloud uses the browser voice for the chosen language and falls back to `en-IN`.
+**Security.** If the user sets a PIN/password, a random salt is generated with `crypto.getRandomValues` and the secret is hashed with PBKDF2 (`crypto.subtle`); only the hash and salt are stored. Wrong PIN shows a toast; "Not you?" deletes the local profile after confirmation.
 
-## 7. Security design
+**i18n.** `t(key)` looks up the active language; missing keys fall back to English. Labels that are bilingual (`"English / हिन्दी"`) show both parts for English and Hindi and only the English part for other languages.
 
-| Risk | Mitigation |
-|------|------------|
-| XSS from user text | Escape before inserting into HTML |
-| Secrets in front-end | None stored; AI endpoint must be your own server, HTTPS only |
-| Unauthorized access to a phone's data | Optional PIN, password and TOTP 2-step |
-| Privacy | No analytics, no backend; data stays on device |
-| Mixed content | HTTPS required for the AI endpoint; service worker needs HTTPS |
+## 6. External dependencies
 
-Recommended hardening for deployment: Content-Security-Policy, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`.
+| Dependency | Use | Loaded from |
+|---|---|---|
+| TensorFlow.js 1.3.1 | ML runtime | cdn.jsdelivr.net |
+| @teachablemachine/image 0.8 | Sign-language classifier | cdn.jsdelivr.net |
+| Google Fonts | Typography | fonts.googleapis.com |
+| Open-Meteo API | Forecast / disaster alerts | api.open-meteo.com |
+| Official portals | Outbound links (112.gov.in, uidai, parivahan, eci, nalsa, bhashini, IRCTC, NTES …) | user taps a link |
 
-## 8. Offline strategy
+Everything else is plain JavaScript; there is no build step.
 
-The service worker caches the app shell. Online-only features (translation, weather, external links) show a message when offline. Saved data is always available.
+## 7. Android packaging
 
-## 9. Third-party services
+Permissions: `INTERNET`, `ACCESS_NETWORK_STATE`, `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION`, `CAMERA`, `RECORD_AUDIO`, `POST_NOTIFICATIONS`, `FOREGROUND_SERVICE`, `RECEIVE_BOOT_COMPLETED`, `WAKE_LOCK`. The WebView must enable JavaScript, DOM storage and a geolocation/permission-request handler, and load the page via `WebViewAssetLoader`.
 
-| Service | Used for | Data sent |
-|---------|----------|-----------|
-| Google Translate (`translate.googleapis.com`) | Translating screen text | Text to translate |
-| Open-Meteo | Weather | Latitude and longitude |
-| Google Fonts | Fonts (Mukta, Playfair Display) | Standard font request |
-| Official `.gov.in` portals, YouTube, OpenStreetMap | Links | None from the app |
+## 8. Performance and accessibility
 
-## 10. Limitations and future work
+- ~600 KB single file; views render on demand (no framework, no build step).
+- Large touch targets, high-contrast palette (navy / saffron / green), `aria-label`s on icon buttons, semantic headings, voice input and text-to-speech, sign-language tool.
+- Right-to-left layout handling for RTL scripts (Urdu, Sindhi, Kashmiri).
 
-- Reports are stored on the phone only; "Sent to authority" is a status label, not a real submission. Integration with an official grievance system would need a backend.
-- Single large HTML file; splitting into modules and adding a build step would help maintenance.
-- Add automated tests (Playwright) on top of the manual test cases.
-- Replace external translation with bundled language packs for full offline use.
+## 9. Known limitations / roadmap
+
+- The page registers `sw.js` for offline caching; add a `sw.js` next to `index.html` when hosting on the web (it is not part of the APK assets). Weather, maps, translation and news need internet.
+- `localStorage` is device-specific: no cross-device sync or cloud backup yet (export/import is a planned feature).
+- Photo size is limited by `localStorage` quota; compress images before saving (planned).
+- Translations for some of the 22 languages fall back to English for rarely used strings.
+- Planned: Play Store release, scheme eligibility checker with offline data, report hand-off to municipal portals, backup to file.
