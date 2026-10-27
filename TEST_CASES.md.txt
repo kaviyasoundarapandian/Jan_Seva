@@ -1,90 +1,123 @@
-# Jan Seva: Test Cases
+# Jan Seva — Test Cases
 
-Setup: serve the app (`python3 -m http.server 8080`), open in Chrome phone view. Load `sample-data/load-sample-data.js` where noted.
-Result column: Pass / Fail.
+**App:** Jan Seva (`index.html`, Android WebView)  **Type:** manual / smoke  **Priority:** P1 = release blocker, P2 = important, P3 = nice to have
 
-## A. Profile and login
-| ID | Steps | Expected | Result |
-|----|-------|----------|--------|
-| A1 | Fresh browser, open app | Welcome screen shows; no console errors | |
-| A2 | Create profile with name and phone | Saved; Home opens; name shown on return | |
-| A3 | Continue as guest | Home opens without a profile | |
-| A4 | Set a PIN, reload | PIN prompt appears | |
-| A5 | Enter wrong PIN | Rejected, stays on lock screen | |
-| A6 | Enter correct PIN | Home opens | |
-| A7 | Enable 2-step, enter a valid authenticator code | Accepted; an old/wrong code is rejected | |
+**Setup:** fresh install (or clear site data). For data-heavy tests run `load-sample-data.js` first (see README).
 
-## B. Emergency
-| ID | Steps | Expected | Result |
-|----|-------|----------|--------|
-| B1 | Open Emergency, tap 112 | Dialer opens with 112 | |
-| B2 | Tap each helpline (100, 101, 108, 1091, 1098, 14416, 1930) | Correct number dials | |
-| B3 | Open SOS with location denied | Clear message; call option still works | |
-| B4 | Open SOS with location allowed | Location is included only after permission | |
+## 1. Launch, language, onboarding
 
-## C. Reports
-| ID | Steps | Expected | Result |
-|----|-------|----------|--------|
-| C1 | Report a problem with category and description | Reference ID `NS-XXXXXX` shown | |
-| C2 | Submit with empty description | Validation message, nothing saved | |
-| C3 | Add a photo | Photo preview appears and saves | |
-| C4 | Tick anonymous | Report saved without name | |
-| C5 | Open My Reports | New report listed with status | |
-| C6 | Load sample data, open My Reports | `NS-DEMO23` (open) and `NS-DEMO45` (resolved, 4 stars) shown | |
-| C7 | Reload page | Reports still there | |
+| ID | Priority | Steps | Expected result |
+|---|---|---|---|
+| TC-001 | P1 | Open the app | Splash with logo, "Jan Seva" and tagline appears, then the welcome screen |
+| TC-002 | P1 | Tap **Continue as guest** | Home opens with search bar, guest banner, Emergency button and tiles |
+| TC-003 | P1 | Open language dropdown, choose Hindi, then Tamil, then English | UI text changes immediately each time; selection persists after reload |
+| TC-004 | P2 | Select each of the 22 languages | No blank labels; missing strings fall back to English; Urdu/Sindhi/Kashmiri show right-to-left |
+| TC-005 | P2 | Tap **Create profile**, leave name empty, save | Validation message "Please enter your name" |
+| TC-006 | P1 | Create profile with name, age, state, qualification, 4-digit PIN | Profile saved; next launch asks for PIN |
+| TC-007 | P1 | Enter wrong PIN, then correct PIN | "Wrong PIN" toast, then access granted |
+| TC-008 | P2 | Create PIN with mismatching confirmation or 3 digits | Error "PINs must match and be 4-6 digits" |
+| TC-009 | P2 | Tap "Not you?" and confirm | Local profile deleted; welcome screen shown |
 
-## D. Categories and links
-| ID | Steps | Expected | Result |
-|----|-------|----------|--------|
-| D1 | Open each category from Home | Page renders, back button returns Home | |
-| D2 | Open 5 government links (DigiLocker, myScheme, Passport, Income Tax, PG Portal) | Official site opens in a new tab | |
-| D3 | Open a private-company link (food/shopping) | "Not a government service" note is visible | |
+## 2. Home and search
 
-## E. Nanba chat
-| ID | Steps | Expected | Result |
-|----|-------|----------|--------|
-| E1 | Type "hello" | Friendly greeting | |
-| E2 | Tap "I feel low" chip | Supportive reply | |
-| E3 | Type a message with self-harm intent | Reply shows Tele-MANAS 14416 and 112 call buttons | |
-| E4 | Turn read-aloud on, send message | Reply is spoken; turning off stops speech | |
-| E5 | Tap mic, speak | Text is sent, or a "not supported" message appears | |
-| E6 | Clear chat | Chat empties, app keeps working | |
-| E7 | Enter `http://example.com` as AI endpoint | Rejected: "Use an https address" | |
+| ID | Priority | Steps | Expected result |
+|---|---|---|---|
+| TC-010 | P1 | Scroll home grid | All category tiles visible (Report, Disaster, Necessity, Transport, Health, Schemes, Old age, News, Pay, Savings, Exams, Documents, Legal, Translator …) |
+| TC-011 | P1 | Tap each bottom-nav item | Correct page opens; active item highlighted; nav scrolls horizontally |
+| TC-012 | P2 | Type "scholarship" in search | Matching tabs/features listed; tapping one opens it |
+| TC-013 | P2 | Search for nonsense text | "Nothing found. Try another word." |
+| TC-014 | P3 | Clear the search box | Normal home view returns |
 
-## F. Language
-| ID | Steps | Expected | Result |
-|----|-------|----------|--------|
-| F1 | Switch to Hindi | Labels change; no raw keys visible | |
-| F2 | Switch to Tamil or another language online | Screen translates | |
-| F3 | Reload | Language is remembered | |
-| F4 | Offline, switch language | Graceful fallback to English, no crash | |
+## 3. Emergency and safety
 
-## G. Offline and PWA
-| ID | Steps | Expected | Result |
-|----|-------|----------|--------|
-| G1 | Load once online, then go offline, reload | App opens | |
-| G2 | Offline, open saved reports and contacts | Data shown | |
-| G3 | Offline, open a feature needing internet | Clear message, no hang | |
-| G4 | Install to home screen | Icon, name and splash correct | |
+| ID | Priority | Steps | Expected result |
+|---|---|---|---|
+| TC-020 | P1 | Open Emergency, tap 112 / 108 / 100 | Phone dialer opens with the right number (no auto-dial) |
+| TC-021 | P1 | Add SOS contact with name + 10-digit number | Contact listed; invalid number (<8 digits) rejected |
+| TC-022 | P1 | Tap **SEND SOS** with location allowed | SMS composer opens for each contact with a maps link to current location |
+| TC-023 | P1 | Tap **SEND SOS** with location denied | Message still prepared, no crash, location-failed notice |
+| TC-024 | P2 | Delete a contact | Contact removed and stays removed after reload |
+| TC-025 | P2 | Open First aid and help | Step-by-step guide displayed |
 
-## H. Security
-| ID | Steps | Expected | Result |
-|----|-------|----------|--------|
-| H1 | Enter `<img src=x onerror=alert(1)>` in profile name, report, contact, chat | No alert; text is shown as plain text | |
-| H2 | Search the source for API keys or secrets | None found | |
-| H3 | Inspect `localStorage` | Only `ns_*` keys; no plain-text PIN or password | |
+## 4. Report a problem
 
-## I. Accessibility
-| ID | Steps | Expected | Result |
-|----|-------|----------|--------|
-| I1 | Toggle system dark mode | All screens readable | |
-| I2 | Zoom text to 200% | No broken layout, no sideways scroll | |
-| I3 | Tab through the page with keyboard | Visible focus ring; all controls reachable | |
-| I4 | Use TalkBack / VoiceOver on Home and Report | Controls announced with sensible labels | |
-| I5 | Use read-aloud on a key screen | Spoken in the chosen language | |
+| ID | Priority | Steps | Expected result |
+|---|---|---|---|
+| TC-030 | P1 | Open Report; choose category, type description, tap Submit | Report saved, "My reports" opens, shows a short report code |
+| TC-031 | P1 | Submit with empty description and no photo | Description field focused; nothing saved |
+| TC-032 | P2 | Add photo (camera/gallery) and **Add my location** | Photo preview and "location added" message; saved with report |
+| TC-033 | P2 | Tick **Report anonymously** | No name/phone stored with the report |
+| TC-034 | P2 | Mark report resolved, give 1–5 rating | Status changes to done; rating kept after reload |
+| TC-035 | P3 | Report older than 7 days with no reply | "No reply from the authority for 7+ days" toast (once per day) |
+| TC-036 | P2 | Every category 1–14 | Each saves and shows the right label |
 
-## J. Sample-data loading
-| ID | Steps | Expected | Result |
-|----|-------|----------|--------|
-| J1 | Run `load-sample-data.js` in console, reload | Demo profile, 3 contacts, 2 reports, 3 reminders appear | |
-| J2 | Delete all `ns_*` keys, reload | App returns to fresh state | |
+## 5. Disaster, places, transport
+
+| ID | Priority | Steps | Expected result |
+|---|---|---|---|
+| TC-040 | P1 | Disaster → **Check my area now** (online, location allowed) | 3-day forecast risk summary with "indicative, not official" note |
+| TC-041 | P2 | Same, offline | Friendly error; offline safety guides still readable |
+| TC-042 | P2 | Enable **Alert me automatically** | Permission prompt; alert checks every ~30 min; can be turned off |
+| TC-043 | P2 | Disaster rescue helper: pick type, people, note, tap Prepare | Pre-filled rescue message created; 112 call button works |
+| TC-044 | P1 | Necessity/Places: tap a category (hospitals, toilets…) | Map/search opens for that category near the user |
+| TC-045 | P2 | Save a place, then delete it | Appears in Saved places; removed on delete |
+| TC-046 | P1 | Transport: enter From and To, choose mode, tap Show route | Map directions open for the chosen mode |
+| TC-047 | P2 | Train number, flight number, bus/metro lookups | Correct external page opens |
+
+## 6. Health and care
+
+| ID | Priority | Steps | Expected result |
+|---|---|---|---|
+| TC-050 | P1 | Health → Start counting, walk | Step count rises; progress bar tracks goal |
+| TC-051 | P2 | Tap **+100 steps by hand** | Count +100 |
+| TC-052 | P2 | Save heart rate 72 | "72 bpm" displayed; invalid values (<20, >250) rejected |
+| TC-053 | P2 | Add glass of water, tick meals | Counters update; reset the next day |
+| TC-054 | P2 | Enable reminders | Notification permission asked; reminder fires at set interval |
+| TC-055 | P2 | Enable auto emergency detection, trigger test | 15-second countdown; **Cancel** stops it; **Call now** dials |
+| TC-056 | P2 | Medicine/vaccination reminder with date | Listed sorted by date; delete works |
+
+## 7. Schemes, pay, documents, legal, exams
+
+| ID | Priority | Steps | Expected result |
+|---|---|---|---|
+| TC-060 | P1 | Govt schemes → scheme search by state | Official scheme page opens |
+| TC-061 | P2 | Expand Farmers section → Farmer box | Farm tools and links displayed |
+| TC-062 | P1 | Pay & bills | Only official payment apps/portals listed; scam-safety text visible |
+| TC-063 | P2 | Documents & ID links (Aadhaar, PAN, passport, DL, voter) | Correct official domains open |
+| TC-064 | P1 | Legal help → Call 15100 | Dialer opens with 15100 |
+| TC-065 | P2 | Rights by state (labour, food) | Results shown for entered state |
+| TC-066 | P2 | Exams: choose qualification | Exam/job links match qualification; reminder can be added |
+| TC-067 | P3 | Old age persons → Pension: save type, amount, day, add received month | Current-month status shows Received / Late / Waiting correctly |
+| TC-068 | P3 | Savings: add goal and income split | Percentages sum to 100%; goal progress updates |
+
+## 8. Translator, Nanba, accessibility
+
+| ID | Priority | Steps | Expected result |
+|---|---|---|---|
+| TC-070 | P1 | Translator: type text, pick target language, tap Translate | Translation page opens (internet needed) |
+| TC-071 | P2 | Tap Speak, talk; tap Listen | Speech converted to text; text read aloud |
+| TC-072 | P2 | Nanba chat: send a message / tap quick chips | Reply appears; history stays after reload |
+| TC-073 | P2 | Sign-language tool with camera permission | Camera preview and prediction among the 10 labels |
+| TC-074 | P2 | Deny camera / mic permissions | Clear message; rest of the app unaffected |
+| TC-075 | P2 | Large system font + TalkBack | Labels readable; buttons announced |
+
+## 9. Storage, privacy, performance, compatibility
+
+| ID | Priority | Steps | Expected result |
+|---|---|---|---|
+| TC-080 | P1 | Use the app in airplane mode | App opens; saved data and static guides work; online-only features show friendly errors |
+| TC-081 | P1 | Force-close and reopen | Language, profile, reports, contacts, reminders preserved |
+| TC-082 | P1 | Inspect network traffic | No requests with personal data; only user-initiated calls (weather, maps, links) |
+| TC-083 | P2 | Fill storage with many photos | "Storage full" toast, no crash |
+| TC-084 | P2 | Rotate device / small screens (320 px) | No horizontal scrolling; buttons reachable |
+| TC-085 | P2 | Android 8 → latest, Chrome WebView | Core flows pass |
+| TC-086 | P3 | Cold start time on a mid-range phone | App usable within a few seconds |
+
+## 10. Regression checklist before release
+
+- [ ] All P1 cases pass on two real Android devices
+- [ ] All 22 languages open without errors
+- [ ] 112 / 108 / 100 / 15100 numbers verified
+- [ ] External links are valid official domains
+- [ ] Permissions requested only on use
+- [ ] `index.html` console has no uncaught errors
