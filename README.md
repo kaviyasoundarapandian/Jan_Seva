@@ -1,98 +1,104 @@
-# Jan Seva
+# Jan Seva (जन सेवा)
 
-A mobile-first, installable web app (PWA) that puts everyday citizen services in one place: emergency help, problem reporting, government schemes and documents, health and care, transport, learning, and a friendly support chat called Nanba. It is built for ease of use, with large buttons, many Indian languages, read-aloud and voice input.
+> **सेवा सबकी, अधिकार सबका** — Service for all, rights for all.
 
-> Jan Seva is not a government app. It links to official portals and does not replace them.
+Jan Seva is a free, privacy-first citizen-services app for India. It brings emergency help, civic complaints, disaster alerts, health tools, government schemes, documents, legal rights, payments, travel and learning into **one app**, in **22 Indian languages**. No sign-up is needed: you can use everything as a guest, and anything you save stays **on your phone**.
+
+It ships as a single web app (`index.html`) that runs in the browser and is packaged as an Android app (WebView) for the Play Store / APK install.
+
+---
 
 ## Features
 
-- **Emergency:** SOS screen and one-tap calls to 112, 100, 101, 108, 1091, 1098, 14416 and others
-- **Report a problem:** save a report with category, description, photo and location; track it in My Reports
-- **Category pages:** disaster, necessities, transport and routes, health, government schemes, old age, news, pay and bills, savings, loans, government exams and jobs, documents and ID, legal help, blood donation, agriculture, tourism, post and courier, form filling, accessibility and more
-- **My care:** diet plan, sleep, notes, water, steps and reminders
-- **Nanba:** offline friendly chat with a crisis response (Tele-MANAS 14416 / 112); optional connection to your own AI service
-- **Panchangam and calendar**
-- **Languages:** English, Hindi and many Indian languages (translation through Google Translate when online)
-- **Accessibility:** read-aloud, voice input, light and dark mode
-- **Security:** optional PIN, password and 2-step verification (TOTP)
-- **Offline-first:** your data stays on your phone (browser `localStorage`)
+| Area | What you can do |
+|---|---|
+| **Emergency** | One-tap calls to 112 / 108 / 100 / 101, Women's Safety **SOS** that SMSes your live location to saved contacts, first-aid help |
+| **Report a problem** | Report dustbins, drains, toilets, potholes, mosquito water, street cleaning, corruption and more; add a photo and GPS location; report anonymously; track status and rate the response |
+| **Disaster** | Early warning for your location (weather/forecast), auto-alert option, guides for flood, cyclone, earthquake, fire, landslide, tsunami; rescue-message helper |
+| **Necessity** | Find water points, hospitals, toilets, pharmacies, ATMs, banks, police and more near you |
+| **Transport & routes** | Route planner (walk / drive / transit), train, flight and bus lookups, metro links |
+| **Health & care** | Step counter, heart-rate log, water and meal tracker, medicine/vaccination reminders, auto-emergency-call on fall detection |
+| **Govt schemes** | Scheme finder by state, farmer box, scholarships, official portals |
+| **Old age persons** | Pension tracker (type, amount, due day, received months) |
+| **News & radio** | City news, epapers, live radio |
+| **Pay & bills** | Trusted payment apps, electricity / water / gas bills, FASTag, scam-safety tips |
+| **Savings & investing** | Income split (needs / wants / savings), savings goals |
+| **Govt documents & ID** | Aadhaar, PAN, passport, voter ID, driving licence, appointments — official links only |
+| **Legal help & rights** | Free legal aid (NALSA 15100), labour and food rights by state, consumer, tenant and cyber-crime help |
+| **Govt exams & jobs** | Exams matched to your qualification, exam reminders |
+| **Blood donation** | Donor registration and blood-request helpers |
+| **Agriculture & water** | Farmer tools, mandi prices, water and soil links |
+| **Translator** | Speak or type, translate across Indian languages, listen to the result |
+| **Accessibility / Divyang learning** | Voice input, text-to-speech, sign-language recognition (on-device model), learning tools |
+| **Nanba (friend)** | A caring chat companion for questions, worries and encouragement |
+| **Find anything** | Search across all tabs and features from the home screen |
+| **Security** | Optional profile with PIN / password (PBKDF2 + salted hash, stored locally) |
 
-## Tech stack
+## Supported languages
 
-Plain HTML, CSS and vanilla JavaScript in a single `index.html`. No build step, no framework, no server, no database.
+English, Hindi, Assamese, Bengali, Bodo, Dogri, Gujarati, Kannada, Kashmiri, Konkani, Maithili, Malayalam, Manipuri, Marathi, Nepali, Odia, Punjabi, Sanskrit, Santali, Sindhi, Tamil, Telugu, Urdu.
 
-## Quick start
+## Privacy
 
-Requirements: any modern browser. For local testing, Python 3 or Node.js (any static file server will do).
+- No account, no server, no analytics. Profile, reports, contacts, places, health data and reminders are stored in the device's `localStorage` (keys prefixed `ns_`).
+- Location, camera, microphone and notifications are requested **only when you use a feature that needs them**.
+- Official links open the original government websites. Jan Seva does not collect OTPs, PINs or card numbers.
+- Jan Seva is **not** an official government app. Verify details on the linked official site.
 
-```bash
-git clone https://github.com/<your-username>/jan-seva.git
-cd jan-seva
+## Project structure
 
-# Option A: Python
-python3 -m http.server 8080
-
-# Option B: Node.js
-npx serve .
+```
+Jan_Seva/
+├── index.html              # The whole app (HTML + CSS + JS, single file)
+├── load-sample-data.js     # Seeds demo data for testing / screenshots / demo video
+├── README.md
+├── TECHNICAL_DESIGN.md     # Architecture, data model, security, build
+├── TEST_CASES.md           # Manual + smoke test cases
+└── LICENSE                 # MIT
 ```
 
-Open http://localhost:8080 in Chrome (use device mode in DevTools for a phone view).
+The Android package wraps `index.html` in a WebView (assets: `index.html`, `model.json`, `metadata.json`).
 
-The app registers a service worker, which only works on `http://localhost` or HTTPS. Opening `index.html` directly from disk (`file://`) works, but without install/offline support.
+## Run locally
 
-### Required files next to `index.html`
+```bash
+# any static server works
+python3 -m http.server 8000
+# open http://localhost:8000/index.html
+```
 
-| File | Purpose |
-|------|---------|
-| `manifest.webmanifest` | PWA name, icons, theme colour |
-| `sw.js` | service worker for offline support |
+Opening `index.html` directly also works for most features. Geolocation, camera, microphone and the service worker need `https://` or `localhost`.
 
-Both are referenced by `index.html`. Make sure they are in the repository root.
+### Load demo data
 
-## Environment variables and configuration
+1. Open the app, tap **Continue as guest** (or create a profile).
+2. Open the browser console (DevTools) and paste the contents of `load-sample-data.js`, or add `<script src="load-sample-data.js"></script>` temporarily.
+3. Reload the page. To remove the demo data run `JanSevaSample.clear()` in the console.
 
-Jan Seva runs entirely in the browser, so there are **no environment variables and no secrets** to set.
+## Build the Android app
 
-| Setting | Where | Required | Description |
-|---------|-------|----------|-------------|
-| Nanba AI endpoint | In the app: Nanba, then "Connect a real AI (optional)" | No | An `https://` URL of your own server. The app sends `{system, messages}` by POST and expects `{"reply": "..."}`. Stored as `ns_nb_api` in localStorage |
-| Language | In the app header | No | Stored as `ns_lang` / `ns_ul` |
+1. Create an Android Studio project (Empty Views Activity, Kotlin).
+2. Copy `index.html`, `model.json`, `metadata.json` into `app/src/main/assets/`.
+3. Load the page through `WebViewAssetLoader` (`https://appassets.androidplatform.net/assets/index.html`) with JavaScript, DOM storage and geolocation enabled.
+4. Declare permissions: `INTERNET`, `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION`, `CAMERA`, `RECORD_AUDIO`, `POST_NOTIFICATIONS`.
+5. Build a signed APK / AAB.
 
-**Never put API keys in the front-end code.** If you use an AI service, keep keys on your own server and expose only the endpoint above.
+## Emergency numbers used
 
-If you run your own AI service, keep its key on your server (for example as an environment variable such as `AI_API_KEY`) and expose only the `https://` endpoint above to the app.
-
-## Sample data and tests
-
-- `sample-data/` has demo profile, contacts, reports and reminders, and a loader that puts them into the app.
-- `tests/TEST_CASES.md` has the manual test cases (functional, security, accessibility, offline).
-
-Load sample data:
-
-1. Open the app in Chrome, then DevTools, then Console.
-2. Paste the contents of `sample-data/load-sample-data.js` and press Enter.
-3. Reload the page.
-
-## Documentation
-
-- [Technical Design Document](docs/TECHNICAL_DESIGN.md): architecture, data flow, storage, security, diagrams
-
-## Data and privacy
-
-All personal data (profile, contacts, reports, reminders, chats) is stored only in the browser on your device. The app contacts these third-party services when the matching feature is used: Google Translate (text to translate), Open-Meteo (weather for your location), Google Fonts, YouTube and OpenStreetMap links. Government links open official websites.
-
-## Deployment
-
-Static hosting works: GitHub Pages, Netlify, Vercel, Cloudflare Pages or any web server over HTTPS. Upload `index.html`, `manifest.webmanifest`, `sw.js` and icons.
+| Number | Service |
+|---|---|
+| 112 | Police, fire, ambulance (all India) |
+| 108 | Ambulance |
+| 100 | Police |
+| 101 | Fire |
+| 1098 | Child helpline |
+| 1091 / 181 | Women helpline |
+| 15100 | Free legal aid (NALSA) |
 
 ## Contributing
 
-Issues and pull requests are welcome. Please test with `tests/TEST_CASES.md` before submitting.
+Issues and pull requests are welcome. Please keep the app a single self-contained file, keep every user-facing string translatable, and do not add trackers or third-party analytics.
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
-
-## Author
-
-Kaviya S
+[MIT](LICENSE) © 2026 Kaviya S
